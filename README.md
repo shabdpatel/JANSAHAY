@@ -1,4 +1,4 @@
-# 🏙️ CivicTrack – Smart City Issue Reporter & Analyzer
+# 🏙️ JANSAHAY – Smart City Issue Reporter & Analyzer
 
 [![Status](https://img.shields.io/badge/Status-Under_Construction-orange?style=for-the-badge)]()
 [![MIT License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)]()
@@ -9,14 +9,14 @@
 
 ## 🌐 Project Overview
 
-CivicTrack is a responsive web app designed for **urban citizen engagement and governance analytics**. It allows users to report local civic problems via a map interface, while authorities can view insights, resolve complaints, and track performance through a Power BI dashboard.
+JANSAHAY is a responsive web app designed for **urban citizen engagement and governance analytics**. It allows users to report local civic problems via a map interface, while authorities can view insights, resolve complaints, and track performance through a Power BI dashboard.
 
 ---
 
 ## 📁 Folder Structure
 
 ```
-civictrack/
+jansahay/
 ├── client/               # Frontend: React + Tailwind CSS + Mapbox
 │   ├── public/
 │   └── src/
@@ -75,8 +75,8 @@ civictrack/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/shabdpatel/civictrack.git
-cd civictrack
+git clone https://github.com/shabdpatel/JANSAHAY.git
+cd jansahay
 ```
 
 ### 2. Set Up Environment Variables
