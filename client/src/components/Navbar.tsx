@@ -9,16 +9,23 @@ const Navbar = () => {
     <nav className="bg-white shadow-md fixed top-0 w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          {/* Logo */}
-          <Link to="/" className="flex items-center">
-            <span className="text-xl font-bold text-blue-700">JANSAHAY</span>
-          </Link>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-gray-700 hover:text-blue-700">Home</Link>
-            <Link to="/report" className="text-gray-700 hover:text-blue-700">Report Issue</Link>
-            <Link to="/history" className="text-gray-700 hover:text-blue-700">Issue History</Link>
+          {/* Logo and Main Links */}
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex items-center">
+              <span className="text-xl font-bold text-blue-700">JANSAHAY</span>
+            </Link>
+            {/* Desktop Main Menu */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link to="/" className="text-gray-700 hover:text-blue-700">Home</Link>
+              <Link to="/report" className="text-gray-700 hover:text-blue-700">Report Issue</Link>
+              <Link to="/history" className="text-gray-700 hover:text-blue-700">Issue History</Link>
+              <Link to="/about" className="text-gray-700 hover:text-blue-700">About</Link>
+              <Link to="/contact" className="text-gray-700 hover:text-blue-700">Contact</Link>
+              <Link to="/faq" className="text-gray-700 hover:text-blue-700">FAQ</Link>
+            </div>
+          </div>
+          {/* Desktop Icons */}
+          <div className="hidden md:flex items-center space-x-4">
             <button className="text-gray-600 hover:text-blue-700">
               <FaSearch size={18} />
             </button>
@@ -26,9 +33,14 @@ const Navbar = () => {
               <FaUserCircle size={22} />
             </button>
           </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile Icons and menu button */}
+          <div className="md:hidden flex items-center space-x-2">
+            <button className="text-gray-600 hover:text-blue-700">
+              <FaSearch size={18} />
+            </button>
+            <button className="text-gray-600 hover:text-blue-700">
+              <FaUserCircle size={22} />
+            </button>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-gray-600 hover:text-blue-700"
@@ -45,10 +57,9 @@ const Navbar = () => {
               <Link to="/" className="block px-3 py-2 text-gray-700 hover:text-blue-700">Home</Link>
               <Link to="/report" className="block px-3 py-2 text-gray-700 hover:text-blue-700">Report Issue</Link>
               <Link to="/history" className="block px-3 py-2 text-gray-700 hover:text-blue-700">Issue History</Link>
-              <div className="flex items-center space-x-4 px-3 py-2">
-                <FaSearch size={18} className="text-gray-600" />
-                <FaUserCircle size={22} className="text-gray-600" />
-              </div>
+              <Link to="/about" className="block px-3 py-2 text-gray-700 hover:text-blue-700">About</Link>
+              <Link to="/contact" className="block px-3 py-2 text-gray-700 hover:text-blue-700">Contact</Link>
+              <Link to="/faq" className="block px-3 py-2 text-gray-700 hover:text-blue-700">FAQ</Link>
             </div>
           </div>
         )}
