@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, LayersControl } from 'react-leaflet';
-import L, { type Map as LeafletMap } from 'leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { FaCrosshairs } from 'react-icons/fa';
 
@@ -335,32 +335,29 @@ const ReportIssue = () => {
                         </button>
                         <div className="border border-gray-300 rounded-md overflow-hidden bg-white relative z-0">
                             <MapContainer
-                                center={[22.5726, 88.3639] as [number, number]}
+                                center={[22.5726, 88.3639]}
                                 zoom={13}
                                 scrollWheelZoom={true}
                                 className="h-48 sm:h-64 w-full relative z-0"
                                 style={{ position: 'relative', zIndex: 0 }}
-                                whenCreated={(mapInstance: LeafletMap) => { mapRef.current = mapInstance; }}
+                                whenReady={({ target }) => { mapRef.current = target; }}
                             >
                                 <LayersControl position="topright">
                                     <LayersControl.BaseLayer checked name="OpenStreetMap">
                                         <TileLayer
                                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                            // @ts-ignore
                                             attribution="&copy; OpenStreetMap contributors"
                                         />
                                     </LayersControl.BaseLayer>
                                     <LayersControl.BaseLayer name="Satellite">
                                         <TileLayer
                                             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                                            // @ts-ignore
                                             attribution="Tiles &copy; Esri"
                                         />
                                     </LayersControl.BaseLayer>
                                     <LayersControl.BaseLayer name="Topographic">
                                         <TileLayer
                                             url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-                                            // @ts-ignore
                                             attribution="Map data: &copy; OpenTopoMap contributors"
                                         />
                                     </LayersControl.BaseLayer>
@@ -437,6 +434,11 @@ const ReportIssue = () => {
                 <div className="block md:hidden mt-6 text-sm text-gray-600 text-center">👤 Citizen Reporter</div>
             </div>
         </div>
+    );
+};
+
+export default ReportIssue;
+        </div >
     );
 };
 
