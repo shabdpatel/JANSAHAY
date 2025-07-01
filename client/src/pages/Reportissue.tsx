@@ -437,9 +437,6 @@ const ReportIssue = () => {
     );
 };
 
-export default ReportIssue;
-        </div >
-    );
-};
+
 
 export default ReportIssue;
