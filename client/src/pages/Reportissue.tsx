@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, LayersControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { FaCrosshairs } from 'react-icons/fa';
 
 // Replace require() with import for marker icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -59,16 +60,32 @@ async function reverseGeocode(lat: number, lon: number): Promise<string | null> 
 const LocationMarker = ({
     onLocationSelect,
     mapRef,
-    setLocationAddress
+    setLocationAddress,
+    externalPosition
 }: {
     onLocationSelect: (lat: number, lng: number) => void,
     mapRef: React.RefObject<any>,
-    setLocationAddress: (address: string) => void
+    setLocationAddress: (address: string) => void,
+    externalPosition?: [number, number] | null
 }) => {
     const [position, setPosition] = useState<[number, number] | null>(null);
 
+    // Always pan the map to the new position when externalPosition changes
+    React.useEffect(() => {
+        if (externalPosition) {
+            setPosition(externalPosition);
+        }
+    }, [externalPosition]);
+
+    React.useEffect(() => {
+        if (externalPosition && mapRef.current) {
+            // Use flyTo for smooth animation and guaranteed movement
+            mapRef.current.flyTo(externalPosition, 16, { animate: true, duration: 1.5 });
+        }
+    }, [externalPosition, mapRef]);
+
     useMapEvents({
-        click: async (e) => {
+        click: async (e: { latlng: { lat: number; lng: number } }) => {
             const { lat, lng } = e.latlng;
             setPosition([lat, lng]);
             onLocationSelect(lat, lng);
@@ -89,6 +106,8 @@ const ReportIssue = () => {
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [search, setSearch] = useState('');
+    const [isLocating, setIsLocating] = useState(false);
+    const [pinPosition, setPinPosition] = useState<[number, number] | null>(null);
     const mapRef = useRef<any>(null);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +177,31 @@ const ReportIssue = () => {
         }
     };
 
+    // Use current location handler
+    const handleUseCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser.');
+            return;
+        }
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+                if (mapRef.current) {
+                    mapRef.current.setView([latitude, longitude], 16);
+                }
+                setPinPosition([latitude, longitude]); // set pin on map
+                const address = await reverseGeocode(latitude, longitude);
+                if (address) setLocation(address);
+                setIsLocating(false);
+            },
+            () => {
+                alert('Unable to retrieve your location.');
+                setIsLocating(false);
+            }
+        );
+    };
+
     return (
         <div className="flex flex-col md:flex-row min-h-screen">
             {/* Sidebar */}
@@ -192,7 +236,7 @@ const ReportIssue = () => {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 px-2 sm:px-4 md:px-10 py-6 sm:py-8">
+            <div className="flex-1 px-2 sm:px-4 md:px-10 py-6 sm:py-8 relative z-0">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Report a New Civic Issue</h1>
 
                 <form
@@ -281,13 +325,22 @@ const ReportIssue = () => {
                                 Search
                             </button>
                         </form>
-                        <div className="border border-gray-300 rounded-md overflow-hidden">
+                        <button
+                            type="button"
+                            onClick={handleUseCurrentLocation}
+                            className="flex items-center gap-2 mb-2 px-3 py-1 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded text-xs sm:text-sm"
+                            disabled={isLocating}
+                        >
+                            <FaCrosshairs /> {isLocating ? 'Locating...' : 'Use My Current Location'}
+                        </button>
+                        <div className="border border-gray-300 rounded-md overflow-hidden bg-white relative z-0">
                             <MapContainer
                                 center={[22.5726, 88.3639]}
                                 zoom={13}
                                 scrollWheelZoom={true}
-                                className="h-48 sm:h-64 w-full"
-                                whenCreated={mapInstance => { mapRef.current = mapInstance; }}
+                                className="h-48 sm:h-64 w-full relative z-0"
+                                style={{ position: 'relative', zIndex: 0 }}
+                                whenCreated={(mapInstance: L.Map) => { mapRef.current = mapInstance; }}
                             >
                                 <LayersControl position="topright">
                                     <LayersControl.BaseLayer checked name="OpenStreetMap">
@@ -310,9 +363,13 @@ const ReportIssue = () => {
                                     </LayersControl.BaseLayer>
                                 </LayersControl>
                                 <LocationMarker
-                                    onLocationSelect={(lat, lng) => setLocation(`${lat}, ${lng}`)}
+                                    onLocationSelect={(lat, lng) => {
+                                        setLocation(`${lat}, ${lng}`);
+                                        setPinPosition([lat, lng]);
+                                    }}
                                     mapRef={mapRef}
                                     setLocationAddress={setLocation}
+                                    externalPosition={pinPosition}
                                 />
                             </MapContainer>
                         </div>
@@ -326,7 +383,7 @@ const ReportIssue = () => {
                     </div>
 
                     <div>
-                        <label className="block text-xs sm:text-sm font-medium mb-1">Upload Images (Optional)</label>
+                        <label className="block text-xs sm:text-sm font-medium mb-1">Upload Images</label>
                         <div className="border border-dashed border-gray-300 rounded-md p-3 sm:p-4 text-center">
                             <input
                                 type="file"
