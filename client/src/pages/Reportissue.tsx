@@ -1,9 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, useMapEvents, LayersControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { FaCrosshairs } from 'react-icons/fa';
+import { db } from '../firebase';
+import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { Cloudinary } from '@cloudinary/url-gen';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { app } from '../firebase';
 
 // Replace require() with import for marker icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -98,6 +103,9 @@ const LocationMarker = ({
     return position === null ? null : <Marker position={position} />;
 };
 
+const CLOUDINARY_UPLOAD_PRESET = 'jansahay'; // <-- set your unsigned upload preset here
+const CLOUDINARY_CLOUD_NAME = 'dqrbhkqrb';
+
 const ReportIssue = () => {
     const [issueType, setIssueType] = useState('Pothole');
     const [department, setDepartment] = useState('Public Works');
@@ -108,38 +116,136 @@ const ReportIssue = () => {
     const [search, setSearch] = useState('');
     const [isLocating, setIsLocating] = useState(false);
     const [pinPosition, setPinPosition] = useState<[number, number] | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [submitMsg, setSubmitMsg] = useState<string | null>(null);
+    const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+    const [uploading, setUploading] = useState(false);
+    const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+    const [mobile, setMobile] = useState('');
     const mapRef = useRef<any>(null);
+    const locationInputRef = useRef<HTMLInputElement>(null);
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Listen to auth state and set user info
+    useEffect(() => {
+        const auth = getAuth(app);
+        const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+            if (firebaseUser) {
+                setUser({
+                    name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+                    email: firebaseUser.email || '',
+                });
+            } else {
+                setUser(null);
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+
+    // Helper to upload a single file to Cloudinary
+    const uploadToCloudinary = async (file: File): Promise<string> => {
+        const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(url, {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await res.json();
+        console.log('Cloudinary upload response:', data); // <-- Add this line
+        if (data.secure_url) return data.secure_url;
+        throw new Error('Cloudinary upload failed: ' + (data.error?.message || 'Unknown error'));
+    };
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const filesArray = Array.from(e.target.files);
-            // Only allow up to 4 images
             const totalImages = images.length + filesArray.length;
             if (totalImages > 4) {
                 alert('You can upload a maximum of 4 images.');
                 return;
             }
-            setImages(prev => [...prev, ...filesArray]);
-            setImagePreviews(prev => [
-                ...prev,
-                ...filesArray.map(file => URL.createObjectURL(file))
-            ]);
+            setUploading(true);
+            try {
+                // Upload all images to Cloudinary
+                const uploadPromises = filesArray.map(file => uploadToCloudinary(file));
+                const urls = await Promise.all(uploadPromises);
+                setUploadedImageUrls(prev => [...prev, ...urls]);
+                setImages(prev => [...prev, ...filesArray]);
+                setImagePreviews(prev => [
+                    ...prev,
+                    ...urls
+                ]);
+            } catch (err) {
+                alert('Image upload failed. Please try again.');
+            }
+            setUploading(false);
         }
     };
 
     const handleRemoveImage = (idx: number) => {
         setImages(prev => prev.filter((_, i) => i !== idx));
         setImagePreviews(prev => prev.filter((_, i) => i !== idx));
+        setUploadedImageUrls(prev => prev.filter((_, i) => i !== idx));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log({ issueType, department, description, location, images });
+        if (!user) {
+            alert("Please log in to report an issue.");
+            window.location.href = "/login";
+            return;
+        }
+        if (uploading) {
+            setSubmitMsg("Please wait for images to finish uploading.");
+            return;
+        }
+        // Validate required fields
+        if (!issueType || !department || !description.trim() || !location.trim() || !mobile.trim()) {
+            setSubmitMsg("Please fill in all required fields (Issue Type, Department, Description, Location, Mobile).");
+            return;
+        }
+        setSubmitting(true);
+        setSubmitMsg(null);
+        try {
+            // Ensure collection name is valid (lowercase, no spaces)
+            const collectionName = `${issueType.replace(/\s+/g, '').toLowerCase()}issues`;
+            const issueData = {
+                issueType: issueType,
+                department: department,
+                description: description,
+                location: location,
+                images: uploadedImageUrls,
+                createdAt: Timestamp.now(),
+                reporter: {
+                    name: user.name,
+                    email: user.email,
+                    mobile: mobile,
+                    // Add more fields if needed
+                }
+            };
+            // Debug log
+            console.log("Submitting to Firestore:", collectionName, issueData);
+            await addDoc(collection(db, collectionName), issueData);
+            setSubmitMsg("Issue reported successfully!");
+            setIssueType('Pothole');
+            setDepartment('Public Works');
+            setDescription('');
+            setLocation('');
+            setImages([]);
+            setImagePreviews([]);
+            setUploadedImageUrls([]);
+            setPinPosition(null);
+            setMobile('');
+        } catch (err) {
+            console.error('Firestore error:', err);
+            setSubmitMsg("Failed to report issue. Please try again.");
+        }
+        setSubmitting(false);
     };
 
     // Search handler for map search bar (manual search)
-    const handleMapSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleMapSearch = async () => {
         if (!search.trim()) return;
         const coords = await geocodeAddress(search);
         if (coords && mapRef.current) {
@@ -190,13 +296,24 @@ const ReportIssue = () => {
                 if (mapRef.current) {
                     mapRef.current.setView([latitude, longitude], 16);
                 }
-                setPinPosition([latitude, longitude]); // set pin on map
+                setPinPosition([latitude, longitude]);
                 const address = await reverseGeocode(latitude, longitude);
-                if (address) setLocation(address);
+                if (address) {
+                    setLocation(address);
+                    locationInputRef.current?.blur(); // <-- force blur to update value on mobile
+                }
                 setIsLocating(false);
             },
-            () => {
-                alert('Unable to retrieve your location.');
+            (error) => {
+                if (error.code === error.PERMISSION_DENIED) {
+                    alert('Location permission denied. Please allow location access in your browser settings.');
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    alert('Location information is unavailable.');
+                } else if (error.code === error.TIMEOUT) {
+                    alert('Location request timed out.');
+                } else {
+                    alert('Unable to retrieve your location.');
+                }
                 setIsLocating(false);
             }
         );
@@ -232,7 +349,9 @@ const ReportIssue = () => {
                         </li>
                     </ul>
                 </nav>
-                <div className="absolute bottom-5 left-5 text-sm text-gray-600">👤 Citizen Reporter</div>
+                <div className="absolute bottom-5 left-5 text-sm text-gray-600">
+                    {user ? <>👤 {user.name}</> : <>👤 <span className="text-blue-600 cursor-pointer" onClick={() => window.location.href = '/login'}>Login to report</span></>}
+                </div>
             </div>
 
             {/* Main Content */}
@@ -310,7 +429,7 @@ const ReportIssue = () => {
                     <div>
                         <label className="block text-xs sm:text-sm font-medium mb-1">Location</label>
                         {/* Map Search Bar */}
-                        <form onSubmit={handleMapSearch} className="flex gap-2 mb-2">
+                        <div className="flex gap-2 mb-2">
                             <input
                                 type="text"
                                 value={search}
@@ -319,12 +438,13 @@ const ReportIssue = () => {
                                 placeholder="Search location on map (e.g. Park Street, Kolkata)"
                             />
                             <button
-                                type="submit"
+                                type="button"
+                                onClick={handleMapSearch}
                                 className="bg-blue-600 text-white px-3 py-1 rounded text-xs sm:text-sm"
                             >
                                 Search
                             </button>
-                        </form>
+                        </div>
                         <button
                             type="button"
                             onClick={handleUseCurrentLocation}
@@ -379,6 +499,7 @@ const ReportIssue = () => {
                             onChange={handleLocationInput}
                             className="mt-2 w-full border border-gray-300 rounded-md p-2"
                             placeholder="Enter specific address or landmark (optional)"
+                            ref={locationInputRef}
                         />
                     </div>
 
@@ -392,17 +513,18 @@ const ReportIssue = () => {
                                 onChange={handleImageChange}
                                 multiple
                                 accept="image/*"
-                                disabled={images.length >= 4}
+                                disabled={images.length >= 4 || uploading}
                             />
-                            <label htmlFor="image-upload" className={`cursor-pointer text-blue-600 font-medium ${images.length >= 4 ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <label htmlFor="image-upload" className={`cursor-pointer text-blue-600 font-medium ${images.length >= 4 || uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                                 Drag & drop images here, or <span className="underline">Browse Files</span>
                             </label>
                             <p className="text-xs sm:text-sm text-gray-500 mt-2">
                                 Max 4 images. Max file size: 5MB each. Supported formats: JPG, PNG, GIF.
                             </p>
-                            {images.length > 0 && (
+                            {uploading && <div className="text-blue-600 mt-2">Uploading images...</div>}
+                            {uploadedImageUrls.length > 0 && (
                                 <div className="mt-3 flex flex-wrap gap-4 justify-center">
-                                    {imagePreviews.map((src, idx) => (
+                                    {uploadedImageUrls.map((src, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
                                             <img
                                                 src={src}
@@ -423,20 +545,63 @@ const ReportIssue = () => {
                         </div>
                     </div>
 
+                    <div>
+                        <label className="block text-xs sm:text-sm font-medium mb-1">Your Name</label>
+                        <input
+                            type="text"
+                            className="w-full border border-gray-300 rounded-md p-2"
+                            value={user?.name || ''}
+                            disabled
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs sm:text-sm font-medium mb-1">Your Email</label>
+                        <input
+                            type="email"
+                            className="w-full border border-gray-300 rounded-md p-2"
+                            value={user?.email || ''}
+                            disabled
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs sm:text-sm font-medium mb-1">Mobile Number</label>
+                        <input
+                            type="tel"
+                            className="w-full border border-gray-300 rounded-md p-2"
+                            value={mobile}
+                            onChange={e => setMobile(e.target.value)}
+                            placeholder="Enter your mobile number"
+                            required
+                        />
+                    </div>
+
                     <button
                         type="submit"
                         className="bg-blue-600 text-white font-semibold px-4 sm:px-6 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
+                        disabled={submitting || uploading}
                     >
-                        Submit Issue
+                        {submitting ? "Submitting..." : "Submit Issue"}
                     </button>
+                    {uploading && (
+                        <div className="mt-2 text-blue-600 text-sm">
+                            Please wait, images are still uploading...
+                        </div>
+                    )}
+                    {submitMsg && (
+                        <div className={`mt-3 text-sm ${submitMsg.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
+                            {submitMsg}
+                        </div>
+                    )}
                 </form>
                 {/* Mobile user info */}
-                <div className="block md:hidden mt-6 text-sm text-gray-600 text-center">👤 Citizen Reporter</div>
+                <div className="block md:hidden mt-6 text-sm text-gray-600 text-center">
+                    {user ? <>👤 {user.name}</> : <>👤 <span className="text-blue-600 cursor-pointer" onClick={() => window.location.href = '/login'}>Login to report</span></>}
+                </div>
             </div>
         </div>
     );
 };
 
-
-
 export default ReportIssue;
+
+
