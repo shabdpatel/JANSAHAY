@@ -6,106 +6,66 @@ import 'leaflet/dist/leaflet.css';
 import { FaCrosshairs } from 'react-icons/fa';
 import { db } from '../firebase';
 import { collection, addDoc, Timestamp } from "firebase/firestore";
-import { Cloudinary } from '@cloudinary/url-gen';
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from '../firebase';
 
-// Replace require() with import for marker icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
+const defaultIcon = L.icon({
     iconRetinaUrl: markerIcon2x,
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
 
-// Helper function to fetch lat/lng from address using Nominatim
-async function geocodeAddress(address: string): Promise<[number, number] | null> {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&accept-language=en&q=${encodeURIComponent(address)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data && data.length > 0) {
-        return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-    }
-    return null;
+L.Marker.prototype.options.icon = defaultIcon;
+
+interface LocationMarkerProps {
+    onLocationSelect: (lat: number, lng: number) => void;
+    mapRef: React.RefObject<L.Map>;
+    setLocationAddress: (address: string) => void;
+    externalPosition?: [number, number] | null;
 }
 
-// Helper function to fetch address from lat/lng using Nominatim
-async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&accept-language=en&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data && data.display_name) {
-        // Try to construct a more detailed address if available
-        if (data.address) {
-            // Compose address from most specific to least specific fields
-            const { road, neighbourhood, suburb, city_district, city, town, village, state, postcode, country } = data.address;
-            const parts = [
-                road,
-                neighbourhood,
-                suburb,
-                city_district,
-                city || town || village,
-                state,
-                postcode,
-                country
-            ].filter(Boolean);
-            if (parts.length > 0) {
-                return parts.join(', ');
-            }
-        }
-        return data.display_name;
-    }
-    return null;
-}
-
-const LocationMarker = ({
+const LocationMarker: React.FC<LocationMarkerProps> = ({
     onLocationSelect,
     mapRef,
     setLocationAddress,
     externalPosition
-}: {
-    onLocationSelect: (lat: number, lng: number) => void,
-    mapRef: React.RefObject<any>,
-    setLocationAddress: (address: string) => void,
-    externalPosition?: [number, number] | null
 }) => {
     const [position, setPosition] = useState<[number, number] | null>(null);
 
-    // Always pan the map to the new position when externalPosition changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (externalPosition) {
             setPosition(externalPosition);
         }
     }, [externalPosition]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (externalPosition && mapRef.current) {
-            // Use flyTo for smooth animation and guaranteed movement
             mapRef.current.flyTo(externalPosition, 16, { animate: true, duration: 1.5 });
         }
     }, [externalPosition, mapRef]);
 
     useMapEvents({
-        click: async (e: { latlng: { lat: number; lng: number } }) => {
+        click: async (e) => {
             const { lat, lng } = e.latlng;
             setPosition([lat, lng]);
             onLocationSelect(lat, lng);
-            // Fetch address and update location input
             const address = await reverseGeocode(lat, lng);
             if (address) setLocationAddress(address);
-            // Save coordinates in parent
-            setCoordinates({ lat, lng });
         },
     });
 
     return position === null ? null : <Marker position={position} />;
 };
 
-const CLOUDINARY_UPLOAD_PRESET = 'jansahay'; // <-- set your unsigned upload preset here
+const CLOUDINARY_UPLOAD_PRESET = 'jansahay';
 const CLOUDINARY_CLOUD_NAME = 'dqrbhkqrb';
 
 const ReportIssue = () => {
@@ -115,7 +75,6 @@ const ReportIssue = () => {
     const [location, setLocation] = useState('');
     const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
     const [images, setImages] = useState<File[]>([]);
-    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [search, setSearch] = useState('');
     const [isLocating, setIsLocating] = useState(false);
     const [pinPosition, setPinPosition] = useState<[number, number] | null>(null);
@@ -125,10 +84,9 @@ const ReportIssue = () => {
     const [uploading, setUploading] = useState(false);
     const [user, setUser] = useState<{ name: string; email: string } | null>(null);
     const [mobile, setMobile] = useState('');
-    const mapRef = useRef<any>(null);
+    const mapRef = useRef<L.Map>(null);
     const locationInputRef = useRef<HTMLInputElement>(null);
 
-    // Listen to auth state and set user info
     useEffect(() => {
         const auth = getAuth(app);
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -144,7 +102,6 @@ const ReportIssue = () => {
         return () => unsubscribe();
     }, []);
 
-    // Helper to upload a single file to Cloudinary
     const uploadToCloudinary = async (file: File): Promise<string> => {
         const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`;
         const formData = new FormData();
@@ -155,7 +112,6 @@ const ReportIssue = () => {
             body: formData,
         });
         const data = await res.json();
-        console.log('Cloudinary upload response:', data); // <-- Add this line
         if (data.secure_url) return data.secure_url;
         throw new Error('Cloudinary upload failed: ' + (data.error?.message || 'Unknown error'));
     };
@@ -170,15 +126,10 @@ const ReportIssue = () => {
             }
             setUploading(true);
             try {
-                // Upload all images to Cloudinary
                 const uploadPromises = filesArray.map(file => uploadToCloudinary(file));
                 const urls = await Promise.all(uploadPromises);
                 setUploadedImageUrls(prev => [...prev, ...urls]);
                 setImages(prev => [...prev, ...filesArray]);
-                setImagePreviews(prev => [
-                    ...prev,
-                    ...urls
-                ]);
             } catch (err) {
                 alert('Image upload failed. Please try again.');
             }
@@ -188,7 +139,6 @@ const ReportIssue = () => {
 
     const handleRemoveImage = (idx: number) => {
         setImages(prev => prev.filter((_, i) => i !== idx));
-        setImagePreviews(prev => prev.filter((_, i) => i !== idx));
         setUploadedImageUrls(prev => prev.filter((_, i) => i !== idx));
     };
 
@@ -203,7 +153,6 @@ const ReportIssue = () => {
             setSubmitMsg("Please wait for images to finish uploading.");
             return;
         }
-        // Validate required fields
         if (!issueType || !department || !description.trim() || !location.trim() || !mobile.trim()) {
             setSubmitMsg("Please fill in all required fields (Issue Type, Department, Description, Location, Mobile).");
             return;
@@ -215,14 +164,13 @@ const ReportIssue = () => {
         setSubmitting(true);
         setSubmitMsg(null);
         try {
-            // Ensure collection name is valid (lowercase, no spaces)
             const collectionName = `${issueType.replace(/\s+/g, '').toLowerCase()}issues`;
             const issueData = {
                 issueType: issueType,
                 department: department,
                 description: description,
                 location: location,
-                coordinates: coordinates, // <-- Save coordinates here
+                coordinates: coordinates,
                 images: uploadedImageUrls,
                 createdAt: Timestamp.now(),
                 reporter: {
@@ -231,17 +179,14 @@ const ReportIssue = () => {
                     mobile: mobile,
                 }
             };
-            // Debug log
-            console.log("Submitting to Firestore:", collectionName, issueData);
             await addDoc(collection(db, collectionName), issueData);
             setSubmitMsg("Issue reported successfully!");
             setIssueType('Pothole');
             setDepartment('Public Works');
             setDescription('');
             setLocation('');
-            setCoordinates(null); // <-- Reset coordinates
+            setCoordinates(null);
             setImages([]);
-            setImagePreviews([]);
             setUploadedImageUrls([]);
             setPinPosition(null);
             setMobile('');
@@ -252,35 +197,34 @@ const ReportIssue = () => {
         setSubmitting(false);
     };
 
-    // Search handler for map search bar (manual search)
     const handleMapSearch = async () => {
         if (!search.trim()) return;
         const coords = await geocodeAddress(search);
         if (coords && mapRef.current) {
             mapRef.current.setView(coords, 16);
-            // Also update the location input with the found address
             const address = await reverseGeocode(coords[0], coords[1]);
             if (address) setLocation(address);
+            setCoordinates({ lat: coords[0], lng: coords[1] });
+            setPinPosition(coords);
         } else {
             alert('Location not found. Please try a different search.');
         }
     };
 
-    // Auto-search and move map as user types in the search bar
     const handleSearchInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
         if (e.target.value.trim().length > 2) {
             const coords = await geocodeAddress(e.target.value);
             if (coords && mapRef.current) {
                 mapRef.current.setView(coords, 16);
-                // Also update the location input with the found address
                 const address = await reverseGeocode(coords[0], coords[1]);
                 if (address) setLocation(address);
+                setCoordinates({ lat: coords[0], lng: coords[1] });
+                setPinPosition(coords);
             }
         }
     };
 
-    // When address input changes, auto-move map and update coordinates
     const handleLocationInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setLocation(e.target.value);
         if (e.target.value.trim().length > 2) {
@@ -288,11 +232,11 @@ const ReportIssue = () => {
             if (coords && mapRef.current) {
                 mapRef.current.setView(coords, 16);
                 setCoordinates({ lat: coords[0], lng: coords[1] });
+                setPinPosition(coords);
             }
         }
     };
 
-    // Use current location handler
     const handleUseCurrentLocation = () => {
         if (!navigator.geolocation) {
             alert('Geolocation is not supported by your browser.');
@@ -331,7 +275,6 @@ const ReportIssue = () => {
 
     return (
         <div className="flex flex-col md:flex-row min-h-screen">
-            {/* Sidebar */}
             <div className="hidden md:block w-full md:w-64 bg-white shadow border-r relative flex-shrink-0">
                 <div className="p-4 font-bold text-lg">JANSAHAY</div>
                 <nav className="mt-4">
@@ -364,7 +307,6 @@ const ReportIssue = () => {
                 </div>
             </div>
 
-            {/* Main Content */}
             <div className="flex-1 px-2 sm:px-4 md:px-10 py-6 sm:py-8 relative z-0">
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">Report a New Civic Issue</h1>
 
@@ -403,7 +345,6 @@ const ReportIssue = () => {
                         </select>
                     </div>
 
-                    {/* Department Concerned */}
                     <div>
                         <label className="block text-xs sm:text-sm font-medium mb-1">Department Concerned</label>
                         <select
@@ -438,7 +379,6 @@ const ReportIssue = () => {
 
                     <div>
                         <label className="block text-xs sm:text-sm font-medium mb-1">Location</label>
-                        {/* Map Search Bar */}
                         <div className="flex gap-2 mb-2">
                             <input
                                 type="text"
@@ -470,7 +410,7 @@ const ReportIssue = () => {
                                 scrollWheelZoom={true}
                                 className="h-48 sm:h-64 w-full relative z-0"
                                 style={{ position: 'relative', zIndex: 0 }}
-                                whenReady={({ target }) => { mapRef.current = target; }}
+                                ref={mapRef}
                             >
                                 <LayersControl position="topright">
                                     <LayersControl.BaseLayer checked name="OpenStreetMap">
@@ -496,7 +436,7 @@ const ReportIssue = () => {
                                     onLocationSelect={(lat, lng) => {
                                         setLocation(`${lat}, ${lng}`);
                                         setPinPosition([lat, lng]);
-                                        setCoordinates({ lat, lng }); // <-- Save coordinates
+                                        setCoordinates({ lat, lng });
                                     }}
                                     mapRef={mapRef}
                                     setLocationAddress={setLocation}
@@ -565,6 +505,7 @@ const ReportIssue = () => {
                             disabled
                         />
                     </div>
+
                     <div>
                         <label className="block text-xs sm:text-sm font-medium mb-1">Your Email</label>
                         <input
@@ -574,6 +515,7 @@ const ReportIssue = () => {
                             disabled
                         />
                     </div>
+
                     <div>
                         <label className="block text-xs sm:text-sm font-medium mb-1">Mobile Number</label>
                         <input
@@ -593,18 +535,20 @@ const ReportIssue = () => {
                     >
                         {submitting ? "Submitting..." : "Submit Issue"}
                     </button>
+
                     {uploading && (
                         <div className="mt-2 text-blue-600 text-sm">
                             Please wait, images are still uploading...
                         </div>
                     )}
+
                     {submitMsg && (
                         <div className={`mt-3 text-sm ${submitMsg.includes('success') ? 'text-green-600' : 'text-red-600'}`}>
                             {submitMsg}
                         </div>
                     )}
                 </form>
-                {/* Mobile user info */}
+
                 <div className="block md:hidden mt-6 text-sm text-gray-600 text-center">
                     {user ? <>👤 {user.name}</> : <>👤 <span className="text-blue-600 cursor-pointer" onClick={() => window.location.href = '/login'}>Login to report</span></>}
                 </div>
@@ -613,6 +557,40 @@ const ReportIssue = () => {
     );
 };
 
+async function geocodeAddress(address: string): Promise<[number, number] | null> {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&accept-language=en&q=${encodeURIComponent(address)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data && data.length > 0) {
+        return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    }
+    return null;
+}
+
+async function reverseGeocode(lat: number, lon: number): Promise<string | null> {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&accept-language=en&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data && data.display_name) {
+        if (data.address) {
+            const { road, neighbourhood, suburb, city_district, city, town, village, state, postcode, country } = data.address;
+            const parts = [
+                road,
+                neighbourhood,
+                suburb,
+                city_district,
+                city || town || village,
+                state,
+                postcode,
+                country
+            ].filter(Boolean);
+            if (parts.length > 0) {
+                return parts.join(', ');
+            }
+        }
+        return data.display_name;
+    }
+    return null;
+}
+
 export default ReportIssue;
-
-
