@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAuth, createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, updateProfile, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { app } from '../firebase';
 
 const RegisterPage = () => {

@@ -27,7 +27,7 @@ L.Marker.prototype.options.icon = defaultIcon;
 
 interface LocationMarkerProps {
     onLocationSelect: (lat: number, lng: number) => void;
-    mapRef: React.RefObject<L.Map>;
+    mapRef: React.RefObject<L.Map | null>;
     setLocationAddress: (address: string) => void;
     externalPosition?: [number, number] | null;
 }
