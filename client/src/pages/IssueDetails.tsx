@@ -1,35 +1,118 @@
 import { useParams } from 'react-router-dom';
-import { issues } from '../data/sampleIssues';
 import { FaMapMarkerAlt, FaTag, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag } from 'react-icons/fa';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
+
+interface Issue {
+  id: string;
+  issueType: string;
+  department: string;
+  description: string;
+  location: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  images: string[];
+  createdAt: Timestamp;
+  reporter: {
+    name: string;
+    email: string;
+    mobile: string;
+  };
+  status?: 'Pending' | 'Resolved' | 'In Progress';
+}
 
 const IssueDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const issue = issues.find((i) => i.id === id);
+  const [issue, setIssue] = useState<Issue | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    const fetchIssue = async () => {
+      try {
+        // We need to search across all issue collections
+        const collections = [
+          'potholeissues',
+          'garbageissues',
+          'streetlightissues',
+          'waterleakissues',
+          'brokenbenchissues',
+          'treefallenissues',
+          'manholeopenissues',
+          'illegalparkingissues',
+          'noisecomplaintissues',
+          'animalmenaceissues',
+          'blockeddrainissues',
+          'poweroutageissues',
+          'roaddamageissues'
+        ];
+
+        let foundIssue: Issue | null = null;
+
+        for (const collectionName of collections) {
+          const docRef = doc(db, collectionName, id || '');
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            foundIssue = {
+              id: docSnap.id,
+              ...docSnap.data()
+            } as Issue;
+            break;
+          }
+        }
+
+        if (foundIssue) {
+          setIssue(foundIssue);
+        } else {
+          setError('Issue not found');
+        }
+      } catch (err) {
+        console.error('Error fetching issue:', err);
+        setError('Failed to load issue details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIssue();
   }, [id]);
 
+  if (loading) return <div className="p-6 text-center">Loading issue details...</div>;
+  if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!issue) return <div className="p-6 text-center text-red-500">Issue not found.</div>;
+
+  // Format the date from Firestore timestamp
+  const reportedDate = issue.createdAt?.toDate().toLocaleString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }) || 'Date not available';
 
   return (
     <div className="flex flex-col lg:flex-row max-w-7xl mx-auto p-2 sm:p-4 gap-4 sm:gap-6">
       {/* Left Content */}
       <div className="flex-1 min-w-0">
         <img
-          src={issue.imageUrl}
-          alt={issue.title}
+          src={issue.images?.[0] || 'https://via.placeholder.com/800x400?text=No+Image+Available'}
+          alt={issue.issueType}
           className="rounded-xl w-full h-44 sm:h-64 object-cover mb-3 sm:mb-4"
         />
 
         <div className="mb-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <h1 className="text-xl sm:text-2xl font-bold break-words">{issue.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold break-words">{issue.issueType}</h1>
           <span className={`text-xs sm:text-sm font-medium px-2 py-1 rounded self-start sm:self-auto ${issue.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
             issue.status === 'Resolved' ? 'bg-green-100 text-green-800' :
               'bg-blue-100 text-blue-800'
             }`}>
-            {issue.status}
+            {issue.status || 'Pending'}
           </span>
         </div>
 
@@ -58,7 +141,7 @@ const IssueDetails = () => {
           <p className="text-gray-700">{issue.description}</p>
         </div>
 
-        {/* Comments */}
+        {/* Comments - Dummy Data */}
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-3 sm:mb-4">
           <h2 className="text-lg font-semibold mb-3">Community Discussion (3)</h2>
           <div className="space-y-3">
@@ -66,17 +149,17 @@ const IssueDetails = () => {
               {
                 name: 'Sarah_K',
                 time: '5 hours ago',
-                text: 'I hit this pothole last week and it caused a flat tire! It really needs to be fixed ASAP. It\'s been there for months.',
+                text: 'I noticed this issue too. It really needs to be fixed ASAP!',
               },
               {
                 name: 'CityWatchDog',
                 time: '3 hours ago',
-                text: 'Thanks for reporting this! We\'ve flagged it for urgent review by the public works department. Please share any photos if you have them.',
+                text: 'Thanks for reporting this! We\'ve flagged it for review.',
               },
               {
                 name: 'Mike_T',
                 time: '1 hour ago',
-                text: 'I drive this route daily. It\'s getting worse. The city needs to prioritize this, especially with winter coming.',
+                text: 'This has been a problem for a while. The city needs to prioritize this.',
               }
             ].map((c, i) => (
               <div key={i} className="bg-gray-50 p-3 rounded border">
@@ -98,7 +181,7 @@ const IssueDetails = () => {
           </div>
         </div>
 
-        {/* Engagement Bar Chart */}
+        {/* Engagement Bar Chart - Dummy Data */}
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <h2 className="text-lg font-semibold mb-3">Issue Engagement</h2>
           <div className="flex items-end justify-between h-32 px-1 sm:px-2 relative">
@@ -142,14 +225,15 @@ const IssueDetails = () => {
           <div className="bg-white p-3 sm:p-4 rounded shadow">
             <h3 className="text-base font-semibold mb-2">Location & Details</h3>
             <img
-              src="https://via.placeholder.com/300x150?text=Map+Preview"
+              src={`https://maps.googleapis.com/maps/api/staticmap?center=${issue.coordinates?.lat},${issue.coordinates?.lng}&zoom=15&size=300x150&maptype=roadmap&markers=color:red%7C${issue.coordinates?.lat},${issue.coordinates?.lng}&key=YOUR_API_KEY`}
               alt="Map preview"
               className="rounded mb-2 sm:mb-3 w-full object-cover"
             />
             <div className="text-sm text-gray-700 space-y-1">
               <div className="flex items-center gap-2"><FaMapMarkerAlt /> {issue.location}</div>
-              <div className="flex items-center gap-2"><FaTag /> {issue.category}</div>
-              <div className="text-xs text-gray-500">Reported on October 26, 2023 at 10:30 AM</div>
+              <div className="flex items-center gap-2"><FaTag /> {issue.department}</div>
+              <div className="text-xs text-gray-500">Reported on {reportedDate}</div>
+              <div className="text-xs text-gray-500">Reported by: {issue.reporter?.name}</div>
             </div>
           </div>
 
@@ -175,21 +259,40 @@ const IssueDetails = () => {
             </div>
           </div>
 
-          {/* Related Issues */}
+          {/* Related Issues - Dummy Data */}
           <div className="bg-white p-3 sm:p-4 rounded shadow">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
               <h3 className="text-sm sm:text-base font-semibold">Related Issues</h3>
               <button className="text-blue-600 text-xs hover:underline">View All</button>
             </div>
-            {issues.filter((i) => i.id !== id).slice(0, 3).map((related) => (
+            {[
+              {
+                id: '1',
+                issueType: 'Pothole on Main Street',
+                images: ['https://via.placeholder.com/150'],
+                status: 'Pending'
+              },
+              {
+                id: '2',
+                issueType: 'Garbage Pileup',
+                images: ['https://via.placeholder.com/150'],
+                status: 'In Progress'
+              },
+              {
+                id: '3',
+                issueType: 'Broken Streetlight',
+                images: ['https://via.placeholder.com/150'],
+                status: 'Resolved'
+              }
+            ].map((related) => (
               <div key={related.id} className="flex gap-2 sm:gap-3 mb-2 sm:mb-3">
                 <img
-                  src={related.imageUrl}
-                  alt={related.title}
+                  src={related.images[0]}
+                  alt={related.issueType}
                   className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded"
                 />
                 <div>
-                  <p className="text-xs sm:text-sm font-medium line-clamp-1">{related.title}</p>
+                  <p className="text-xs sm:text-sm font-medium line-clamp-1">{related.issueType}</p>
                   <p className="text-[10px] sm:text-xs text-gray-500">{related.status}</p>
                 </div>
               </div>

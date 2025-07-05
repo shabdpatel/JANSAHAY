@@ -97,6 +97,8 @@ const LocationMarker = ({
             // Fetch address and update location input
             const address = await reverseGeocode(lat, lng);
             if (address) setLocationAddress(address);
+            // Save coordinates in parent
+            setCoordinates({ lat, lng });
         },
     });
 
@@ -111,6 +113,7 @@ const ReportIssue = () => {
     const [department, setDepartment] = useState('Public Works');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
+    const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
     const [images, setImages] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [search, setSearch] = useState('');
@@ -205,6 +208,10 @@ const ReportIssue = () => {
             setSubmitMsg("Please fill in all required fields (Issue Type, Department, Description, Location, Mobile).");
             return;
         }
+        if (!coordinates) {
+            setSubmitMsg("Please select a location on the map or via search.");
+            return;
+        }
         setSubmitting(true);
         setSubmitMsg(null);
         try {
@@ -215,13 +222,13 @@ const ReportIssue = () => {
                 department: department,
                 description: description,
                 location: location,
+                coordinates: coordinates, // <-- Save coordinates here
                 images: uploadedImageUrls,
                 createdAt: Timestamp.now(),
                 reporter: {
                     name: user.name,
                     email: user.email,
                     mobile: mobile,
-                    // Add more fields if needed
                 }
             };
             // Debug log
@@ -232,6 +239,7 @@ const ReportIssue = () => {
             setDepartment('Public Works');
             setDescription('');
             setLocation('');
+            setCoordinates(null); // <-- Reset coordinates
             setImages([]);
             setImagePreviews([]);
             setUploadedImageUrls([]);
@@ -272,13 +280,14 @@ const ReportIssue = () => {
         }
     };
 
-    // When address input changes, auto-move map
+    // When address input changes, auto-move map and update coordinates
     const handleLocationInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
         setLocation(e.target.value);
         if (e.target.value.trim().length > 2) {
             const coords = await geocodeAddress(e.target.value);
             if (coords && mapRef.current) {
                 mapRef.current.setView(coords, 16);
+                setCoordinates({ lat: coords[0], lng: coords[1] });
             }
         }
     };
@@ -297,10 +306,11 @@ const ReportIssue = () => {
                     mapRef.current.setView([latitude, longitude], 16);
                 }
                 setPinPosition([latitude, longitude]);
+                setCoordinates({ lat: latitude, lng: longitude });
                 const address = await reverseGeocode(latitude, longitude);
                 if (address) {
                     setLocation(address);
-                    locationInputRef.current?.blur(); // <-- force blur to update value on mobile
+                    locationInputRef.current?.blur();
                 }
                 setIsLocating(false);
             },
@@ -486,6 +496,7 @@ const ReportIssue = () => {
                                     onLocationSelect={(lat, lng) => {
                                         setLocation(`${lat}, ${lng}`);
                                         setPinPosition([lat, lng]);
+                                        setCoordinates({ lat, lng }); // <-- Save coordinates
                                     }}
                                     mapRef={mapRef}
                                     setLocationAddress={setLocation}

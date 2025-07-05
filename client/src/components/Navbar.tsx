@@ -14,9 +14,10 @@ const Navbar = () => {
 
   const navLinks = [
     { to: '/', label: 'Home' },
+    { to: '/issues', label: 'All Issues' },
     { to: '/report-issue', label: 'Report Issue' },
     { to: '/history', label: 'Issue History' },
-    { to: '/about', label: 'About' },
+    { to: '/issuemap', label: 'Issue Map' }, // <-- Changed from About to Issue Map
     { to: '/contact', label: 'Contact' },
     { to: '/faq', label: 'FAQ' },
   ];

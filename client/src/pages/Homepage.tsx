@@ -1,10 +1,86 @@
 import { FaClipboardList, FaShieldAlt, FaUsers } from 'react-icons/fa';
 import IssueCard from './../components/Issuecard';
-import { issues } from '../data/sampleIssues';
+import { useEffect, useState } from 'react';
+import { db } from '../firebase';
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 
 const bannerImage = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80';
 
+interface Issue {
+  id: string;
+  issueType: string;
+  department: string;
+  description: string;
+  location: string;
+  coordinates: { lat: number; lng: number };
+  images: string[];
+  createdAt: { seconds: number; nanoseconds: number };
+  reporter: {
+    name: string;
+    email: string;
+    mobile: string;
+  };
+}
+
 const Homepage = () => {
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecentIssues = async () => {
+      try {
+        // We'll query multiple collections and combine results
+        const collections = [
+          'potholeissues',
+          'garbageissues',
+          'streetlightissues',
+          'waterleakissues',
+          'brokenbenchissues',
+          'treefallenissues',
+          'manholeopenissues',
+          'illegalparkingissues',
+          'noisecomplaintissues',
+          'animalmenaceissues',
+          'blockeddrainissues',
+          'poweroutageissues',
+          'roaddamageissues',
+          'otherissues'
+        ];
+
+        let allIssues: Issue[] = [];
+
+        for (const collectionName of collections) {
+          const q = query(
+            collection(db, collectionName),
+            orderBy('createdAt', 'desc'),
+            limit(3)
+          );
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach((doc) => {
+            allIssues.push({
+              id: doc.id,
+              ...doc.data()
+            } as Issue);
+          });
+        }
+
+        // Sort all issues by createdAt timestamp (newest first)
+        allIssues.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+
+        // Take the 6 most recent issues
+        setIssues(allIssues.slice(0, 6));
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching issues:', err);
+        setError('Failed to load recent issues. Please try again later.');
+        setLoading(false);
+      }
+    };
+
+    fetchRecentIssues();
+  }, []);
+
   return (
     <div className="pt-4 sm:pt-8">
       {/* Hero Banner Section */}
@@ -73,17 +149,29 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Issues Section - THIS IS THE ONLY ONE THAT SHOULD EXIST */}
+      {/* Issues Section */}
       <section className="px-2 sm:px-4 md:px-10 my-6 sm:my-10">
         <h2 className="text-center text-lg sm:text-2xl font-semibold mb-6">
           Recently Reported Issues
         </h2>
-        <div className="px-2 sm:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {issues.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <p className="mt-2 text-gray-600">Loading recent issues...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">{error}</div>
+        ) : issues.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">No recent issues found</div>
+        ) : (
+          <div className="px-2 sm:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {issues.map((issue) => (
+              <IssueCard key={issue.id} issue={issue} />
+            ))}
+          </div>
+        )}
       </section>
+
       {/* How It Works Section */}
       <section className="px-4 md:px-10 py-6 sm:py-10 bg-gray-50">
         <h2 className="text-center text-lg sm:text-2xl font-semibold mb-8">
@@ -132,7 +220,6 @@ const Homepage = () => {
           ))}
         </div>
       </section>
-
     </div>
   );
 };
