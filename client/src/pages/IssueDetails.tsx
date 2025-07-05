@@ -1,9 +1,25 @@
 import { useParams } from 'react-router-dom';
-import { FaMapMarkerAlt, FaTag, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaTag, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag, FaArrowLeft } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix default marker icon for leaflet
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 interface Issue {
   id: string;
@@ -30,12 +46,12 @@ const IssueDetails = () => {
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo(0, 0);
     const fetchIssue = async () => {
       try {
-        // We need to search across all issue collections
         const collections = [
           'potholeissues',
           'garbageissues',
@@ -87,7 +103,6 @@ const IssueDetails = () => {
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!issue) return <div className="p-6 text-center text-red-500">Issue not found.</div>;
 
-  // Format the date from Firestore timestamp
   const reportedDate = issue.createdAt?.toDate().toLocaleString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -98,8 +113,14 @@ const IssueDetails = () => {
 
   return (
     <div className="flex flex-col lg:flex-row max-w-7xl mx-auto p-2 sm:p-4 gap-4 sm:gap-6">
-      {/* Left Content */}
       <div className="flex-1 min-w-0">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-4"
+        >
+          <FaArrowLeft /> Back to Issues
+        </button>
+
         <img
           src={issue.images?.[0] || 'https://via.placeholder.com/800x400?text=No+Image+Available'}
           alt={issue.issueType}
@@ -116,7 +137,6 @@ const IssueDetails = () => {
           </span>
         </div>
 
-        {/* Action Options */}
         <div className="flex flex-wrap gap-2 sm:gap-4 mb-3 sm:mb-4">
           <button className="flex items-center gap-1 text-green-600 hover:underline text-sm">
             <FaThumbsUp /> Upvote
@@ -135,13 +155,11 @@ const IssueDetails = () => {
           </button>
         </div>
 
-        {/* Description */}
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-3 sm:mb-4">
           <h2 className="text-lg font-semibold mb-2">Issue Description</h2>
           <p className="text-gray-700">{issue.description}</p>
         </div>
 
-        {/* Comments - Dummy Data */}
         <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-3 sm:mb-4">
           <h2 className="text-lg font-semibold mb-3">Community Discussion (3)</h2>
           <div className="space-y-3">
@@ -170,7 +188,6 @@ const IssueDetails = () => {
             ))}
           </div>
 
-          {/* Comment Input */}
           <div className="mt-3 sm:mt-4 flex gap-2">
             <input
               type="text"
@@ -181,11 +198,9 @@ const IssueDetails = () => {
           </div>
         </div>
 
-        {/* Engagement Bar Chart - Dummy Data */}
         <div className="bg-white rounded-lg shadow p-3 sm:p-4">
           <h2 className="text-lg font-semibold mb-3">Issue Engagement</h2>
           <div className="flex items-end justify-between h-32 px-1 sm:px-2 relative">
-            {/* Y-axis labels */}
             <div className="absolute left-0 top-2 flex flex-col justify-between h-28 text-[10px] sm:text-xs text-gray-400" style={{ height: '112px' }}>
               <span>100</span>
               <span>75</span>
@@ -193,7 +208,6 @@ const IssueDetails = () => {
               <span>25</span>
               <span>0</span>
             </div>
-            {/* Bars */}
             {[
               { value: 70, label: 'Mon' },
               { value: 100, label: 'Tue' },
@@ -213,22 +227,34 @@ const IssueDetails = () => {
               </div>
             ))}
           </div>
-          {/* X-axis label */}
           <div className="flex justify-center mt-2 text-[10px] sm:text-xs text-gray-400">Engagement by Day</div>
         </div>
       </div>
 
-      {/* Right Sidebar */}
       <div className="w-full lg:w-[320px] space-y-3 sm:space-y-4 flex-shrink-0 mt-4 lg:mt-0">
         <div className="flex flex-col gap-3 sm:gap-4 sticky top-4">
-          {/* Location Card */}
           <div className="bg-white p-3 sm:p-4 rounded shadow">
             <h3 className="text-base font-semibold mb-2">Location & Details</h3>
-            <img
-              src={`https://maps.googleapis.com/maps/api/staticmap?center=${issue.coordinates?.lat},${issue.coordinates?.lng}&zoom=15&size=300x150&maptype=roadmap&markers=color:red%7C${issue.coordinates?.lat},${issue.coordinates?.lng}&key=YOUR_API_KEY`}
-              alt="Map preview"
-              className="rounded mb-2 sm:mb-3 w-full object-cover"
-            />
+            <div className="h-48 w-full mb-2 sm:mb-3 rounded overflow-hidden">
+              {issue.coordinates && (
+                <MapContainer
+                  center={[issue.coordinates.lat, issue.coordinates.lng]}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={[issue.coordinates.lat, issue.coordinates.lng]}>
+                    <Popup>
+                      {issue.issueType}<br />
+                      {issue.location}
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              )}
+            </div>
             <div className="text-sm text-gray-700 space-y-1">
               <div className="flex items-center gap-2"><FaMapMarkerAlt /> {issue.location}</div>
               <div className="flex items-center gap-2"><FaTag /> {issue.department}</div>
@@ -237,9 +263,11 @@ const IssueDetails = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="bg-white p-3 sm:p-4 rounded shadow space-y-2 sm:space-y-3">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded text-sm">
+            <button
+              onClick={() => navigate('/report-issue')}
+              className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded text-sm"
+            >
               + Report New Issue
             </button>
             <div className="flex justify-around text-xs sm:text-sm text-gray-600">
@@ -259,7 +287,6 @@ const IssueDetails = () => {
             </div>
           </div>
 
-          {/* Related Issues - Dummy Data */}
           <div className="bg-white p-3 sm:p-4 rounded shadow">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
               <h3 className="text-sm sm:text-base font-semibold">Related Issues</h3>

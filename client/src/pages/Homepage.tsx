@@ -3,6 +3,7 @@ import IssueCard from './../components/Issuecard';
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { useNavigate } from 'react-router-dom';
 
 const bannerImage = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80';
 
@@ -26,6 +27,7 @@ const Homepage = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRecentIssues = async () => {
@@ -97,9 +99,13 @@ const Homepage = () => {
               Report local issues, track progress, and contribute to a better
               neighborhood effortlessly.
             </p>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 xs:px-4 xs:py-2 rounded shadow transition text-xs xs:text-sm sm:text-base">
+            <button
+              onClick={() => navigate('/report-issue')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 xs:px-4 xs:py-2 rounded shadow transition text-xs xs:text-sm sm:text-base"
+            >
               Report a New Issue
             </button>
+
           </div>
         </div>
       </section>
