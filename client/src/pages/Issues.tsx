@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import IssueCard from './../components/Issuecard';
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
@@ -11,22 +11,6 @@ const getStatusList = (arr: any[]) =>
     Array.from(new Set(arr.map(item => item.status || 'Pending')));
 
 // Format time ago from Firestore timestamp
-const formatTimeAgo = (timestamp: { seconds: number; nanoseconds: number }) => {
-    const date = new Date(timestamp.seconds * 1000);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
-
-    return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-    });
-};
 
 const Issues = () => {
     const [search, setSearch] = useState('');

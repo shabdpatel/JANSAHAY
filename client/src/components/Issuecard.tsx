@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaMapMarkerAlt, FaTag, FaUser, FaPhone, FaEnvelope, FaCalendarAlt } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaTag, FaUser, FaPhone, FaCalendarAlt } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { Timestamp } from 'firebase/firestore';
 
