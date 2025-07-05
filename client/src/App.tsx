@@ -10,10 +10,6 @@ import LoginPage from './components/Login';
 import RegisterPage from './components/Register';
 import Issues from './pages/Issues';
 import IssueMap from './pages/Issuemap';
-import { Cloudinary } from '@cloudinary/url-gen';
-import { auto } from '@cloudinary/url-gen/actions/resize';
-import { autoGravity } from '@cloudinary/url-gen/qualifiers/gravity';
-import { AdvancedImage } from '@cloudinary/react';
 import Contact from './pages/Contact';
 import FAQ from './pages/Faq';
 
@@ -29,13 +25,6 @@ const ScrollToTopOnRouteChange = () => {
 };
 
 function App() {
-  const cld = new Cloudinary({ cloud: { cloudName: 'dqrbhkqrb' } });
-  const img = cld
-    .image('cld-sample-5')
-    .format('auto')
-    .quality('auto')
-    .resize(auto().gravity(autoGravity()).width(500).height(500));
-
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50 flex flex-col">

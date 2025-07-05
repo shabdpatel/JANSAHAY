@@ -10,12 +10,19 @@ import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
+
+// Fix for default marker icons
+const defaultIcon = L.icon({
     iconRetinaUrl: markerIcon2x,
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
 });
+
+L.Marker.prototype.options.icon = defaultIcon;
 
 interface Issue {
     id: string;
@@ -34,22 +41,23 @@ interface Issue {
     status?: 'Pending' | 'Resolved' | 'In Progress';
 }
 
-// Helper to extract lat/lng from coordinates object
-const getLatLng = (coordinates: { lat: number; lng: number }): [number, number] | null => {
-    if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
-        return null;
-    }
-    return [coordinates.lat, coordinates.lng];
-};
+interface MapFlyToProps {
+    position: [number, number] | null;
+    zoom?: number;
+}
 
-// Map controller for flyTo
-const MapFlyTo: React.FC<{ position: [number, number] | null; zoom?: number }> = ({ position, zoom }) => {
+const MapFlyTo: React.FC<MapFlyToProps> = ({ position, zoom }) => {
     const map = useMap();
-    React.useEffect(() => {
+
+    useEffect(() => {
         if (position) {
-            map.flyTo(position, zoom || 14, { animate: true, duration: 1.5 });
+            map.flyTo(position, zoom || 14, {
+                animate: true,
+                duration: 1.5
+            });
         }
     }, [position, zoom, map]);
+
     return null;
 };
 
@@ -70,6 +78,14 @@ const IssueMap = () => {
     const [isLocating, setIsLocating] = useState(false);
     const [issues, setIssues] = useState<Issue[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Helper to extract lat/lng from coordinates object
+    const getLatLng = (coordinates: { lat: number; lng: number }): [number, number] | null => {
+        if (!coordinates || typeof coordinates.lat !== 'number' || typeof coordinates.lng !== 'number') {
+            return null;
+        }
+        return [coordinates.lat, coordinates.lng];
+    };
 
     // Fetch issues from Firestore
     useEffect(() => {
@@ -99,7 +115,6 @@ const IssueMap = () => {
                     const querySnapshot = await getDocs(q);
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
-                        // Validate coordinates before adding to array
                         if (data.coordinates && typeof data.coordinates.lat === 'number' && typeof data.coordinates.lng === 'number') {
                             allIssues.push({
                                 id: doc.id,
@@ -151,6 +166,7 @@ const IssueMap = () => {
         if (coords) {
             setMapCenter(coords);
             setMapZoom(15);
+            setSearchInput('');
         } else {
             alert('Location not found. Please try a different search.');
         }
@@ -292,8 +308,8 @@ const IssueMap = () => {
                     <div className="flex items-center justify-center h-full text-gray-500">Loading map...</div>
                 ) : (
                     <MapContainer
-                        center={mapCenter || defaultCenter}
-                        zoom={mapZoom || defaultZoom}
+                        center={defaultCenter}
+                        zoom={defaultZoom}
                         scrollWheelZoom={true}
                         className="w-full h-full z-0"
                     >
@@ -307,8 +323,12 @@ const IssueMap = () => {
                             if (!latlng) return null;
 
                             return (
-                                <Marker key={issue.id} position={latlng}>
-                                    <Tooltip direction="top" offset={[0, -10]} opacity={1} permanent={false}>
+                                <Marker
+                                    key={issue.id}
+                                    position={latlng}
+                                    icon={defaultIcon}
+                                >
+                                    <Tooltip>
                                         <div>
                                             <div className="font-bold text-blue-700 text-xs">
                                                 {issue.issueType}
