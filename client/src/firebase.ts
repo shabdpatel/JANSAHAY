@@ -1,6 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getAuth } from 'firebase/auth';
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -21,8 +23,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 // const analytics = getAnalytics(app);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
 
 // 🔴 Ensure your .env has the correct storage bucket (should end with .appspot.com):
 // VITE_FIREBASE_STORAGE_BUCKET=jansahay-f7a2b.appspot.com
 
-export { app, db };
+export { app, db, auth };

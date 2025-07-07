@@ -294,7 +294,7 @@ const ReportIssue = () => {
                         </li>
                         <li>
                             <Link
-                                to="/issue-history"
+                                to="/issuehistory"
                                 className="block px-6 py-3 text-gray-700 hover:bg-gray-100 transition-colors"
                             >
                                 Issue History
