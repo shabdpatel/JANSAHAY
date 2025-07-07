@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { FaMapMarkerAlt, FaTag, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag, FaArrowLeft, FaComment, FaUser, FaCalendarAlt, FaChartLine } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaTag, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag, FaArrowLeft, FaComment, FaUser, FaCalendarAlt } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -50,7 +50,7 @@ const IssueDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
-  const [allIssues, setAllIssues] = useState<Issue[]>([]);
+  const [allIssues] = useState<Issue[]>([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -74,7 +74,6 @@ const IssueDetails = () => {
         ];
 
         let foundIssue: Issue | null = null;
-        let issuesList: Issue[] = [];
 
         for (const collectionName of collections) {
           const docRef = doc(db, collectionName, id || '');
