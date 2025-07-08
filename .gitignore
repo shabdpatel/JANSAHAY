@@ -26,3 +26,4 @@
 .DS_Store
 
 echo "data_analysis/fire.json" >> .gitignore
+data_analysis/fire.json
