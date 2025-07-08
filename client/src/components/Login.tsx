@@ -18,10 +18,23 @@ const LoginPage = () => {
         setError(null);
         setLoading(true);
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            console.log("Logged in user:", userCredential.user);
             navigate('/');
         } catch (err: any) {
-            setError(err.message || "Login failed");
+            console.error("Login error:", err);
+            let errorMessage = "Login failed";
+
+            // More user-friendly error messages
+            if (err.code === "auth/user-not-found") {
+                errorMessage = "No user found with this email";
+            } else if (err.code === "auth/wrong-password") {
+                errorMessage = "Incorrect password";
+            } else if (err.code === "auth/invalid-email") {
+                errorMessage = "Invalid email format";
+            }
+
+            setError(errorMessage);
         }
         setLoading(false);
     };

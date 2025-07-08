@@ -172,6 +172,7 @@ const ReportIssue = () => {
                 location: location,
                 coordinates: coordinates,
                 images: uploadedImageUrls,
+                status: 'Pending',
                 createdAt: Timestamp.now(),
                 reporter: {
                     name: user.name,

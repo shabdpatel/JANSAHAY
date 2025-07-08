@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAuth, updateProfile, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, updateProfile, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { app } from '../firebase';
+
 
 const RegisterPage = () => {
     const navigate = useNavigate();
@@ -17,13 +18,22 @@ const RegisterPage = () => {
         e.preventDefault();
         setError(null);
         setLoading(true);
+
         try {
-            if (auth.currentUser && name) {
-                await updateProfile(auth.currentUser, { displayName: name });
+            // First create the user with email/password
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+            // Then update their profile with the name
+            if (userCredential.user) {
+                await updateProfile(userCredential.user, {
+                    displayName: name
+                });
             }
+
             navigate('/');
         } catch (err: any) {
             setError(err.message || "Registration failed");
+            console.error("Registration error:", err);
         }
         setLoading(false);
     };

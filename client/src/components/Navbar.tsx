@@ -11,6 +11,8 @@ const Navbar = () => {
   const [userName, setUserName] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userDepartment, setUserDepartment] = useState<string | null>(null);
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -20,6 +22,11 @@ const Navbar = () => {
     { to: '/issuemap', label: 'Issue Map' }, // <-- Changed from About to Issue Map
     { to: '/contact', label: 'Contact' },
     { to: '/faq', label: 'FAQ' },
+  ];
+
+  const allNavLinks = [
+    ...navLinks,
+    ...(isAdmin ? [{ to: '/admin', label: 'Admin Panel' }] : [])
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -44,6 +51,23 @@ const Navbar = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsLoggedIn(!!user);
       setUserName(user?.displayName || null);
+
+      // Check for admin status and department
+      if (user?.email) {
+        const email = user.email.toLowerCase();
+        // Check for admin pattern (admin.department@domain.com)
+        const adminMatch = email.match(/^admin\.([a-z]+)@/i);
+        if (adminMatch) {
+          setIsAdmin(true);
+          setUserDepartment(adminMatch[1]); // Extract department
+        } else {
+          setIsAdmin(false);
+          setUserDepartment(null);
+        }
+      } else {
+        setIsAdmin(false);
+        setUserDepartment(null);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -59,7 +83,7 @@ const Navbar = () => {
             </Link>
             {/* Desktop Main Menu */}
             <div className="hidden md:flex items-center space-x-8">
-              {navLinks.map(link => (
+              {allNavLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -167,7 +191,7 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden" id="mobile-menu">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navLinks.map(link => (
+              {allNavLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
