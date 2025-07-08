@@ -2,9 +2,18 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import pandas as pd
 import os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 # Step 1: Initialize Firebase app
-cred = credentials.Certificate("../fire.json")  # Update path if needed
+cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+if not cred_path or not os.path.exists(cred_path):
+    raise FileNotFoundError("Firebase credential file not found. Check GOOGLE_APPLICATION_CREDENTIALS in .env")
+
+cred = credentials.Certificate(cred_path)
+# Update path if needed
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
