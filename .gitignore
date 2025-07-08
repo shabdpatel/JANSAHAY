@@ -24,3 +24,5 @@
 # Cache
 **/.cache/
 .DS_Store
+
+echo "data_analysis/fire.json" >> .gitignore
