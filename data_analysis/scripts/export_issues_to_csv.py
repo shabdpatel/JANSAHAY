@@ -81,4 +81,4 @@ df = pd.DataFrame(data)
 output_path = os.path.join(os.path.dirname(__file__), "firestore_issues_export.csv")
 df.to_csv(output_path, index=False)
 
-print(f"✅ Exported {len(data)} issues to {output_path}")
+print(f"✅ Exportedfile {len(data)} issues to {output_path}")
