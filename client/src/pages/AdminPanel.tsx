@@ -1,4 +1,3 @@
-// src/pages/AdminPanel.tsx
 import React, { useState, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
@@ -33,7 +32,7 @@ type Issue = {
     issueType: string;
     status: string;
     createdAt: Date;
-    images?: string[];
+    images: string[]; // Make always an array (default: [])
     description: string;
     coordinates?: { lat: number; lng: number };
     location: string;
@@ -170,11 +169,11 @@ const AdminPanel = () => {
                                         {/* Image Gallery */}
                                         <div>
                                             <img
-                                                src={selectedIssue.images?.[0] || 'https://via.placeholder.com/800x450?text=No+Image+Available'}
+                                                src={selectedIssue.images[0] || 'https://via.placeholder.com/800x450?text=No+Image+Available'}
                                                 alt={selectedIssue.issueType}
                                                 className="rounded-lg w-full h-auto max-h-96 object-cover shadow-sm"
                                             />
-                                            {selectedIssue.images?.length > 1 && (
+                                            {selectedIssue.images.length > 1 && (
                                                 <div className="grid grid-cols-4 gap-2 mt-2">
                                                     {selectedIssue.images.slice(1, 5).map((img: string, index: number) => (
                                                         <img
@@ -473,13 +472,25 @@ const AdminPanel = () => {
                 }
 
                 const querySnapshot = await getDocs(q);
-                const issuesData = querySnapshot.docs.map(docItem => ({
-                    id: docItem.id,
-                    collection: collectionName,
-                    ...docItem.data(),
-                    status: docItem.data().status || 'pending', // Ensure status always has a value
-                    createdAt: docItem.data().createdAt?.toDate() || new Date()
-                }));
+                const issuesData: Issue[] = querySnapshot.docs.map(docItem => {
+                    const data = docItem.data();
+                    // Defensive: always set images to array
+                    return {
+                        id: docItem.id,
+                        collection: collectionName,
+                        issueType: data.issueType ?? '',
+                        status: data.status ?? 'pending',
+                        createdAt: data.createdAt?.toDate
+                            ? data.createdAt.toDate()
+                            : (data.createdAt instanceof Date ? data.createdAt : new Date()),
+                        images: Array.isArray(data.images) ? data.images : [],
+                        description: data.description ?? '',
+                        coordinates: data.coordinates,
+                        location: data.location ?? '',
+                        department: data.department ?? '',
+                        reporter: data.reporter ?? undefined
+                    };
+                });
                 allIssues = [...allIssues, ...issuesData];
             }
 

@@ -1,9 +1,9 @@
-// src/components/ProtectedRoute.tsx
+import { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase';
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: ReactElement }) => {
     const auth = getAuth(app);
     const location = useLocation();
     const user = auth.currentUser;

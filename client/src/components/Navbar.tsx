@@ -12,14 +12,14 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userDepartment, setUserDepartment] = useState<string | null>(null);
+  // Removed userDepartment as it's unused
 
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/issues', label: 'All Issues' },
     { to: '/report-issue', label: 'Report Issue' },
     { to: '/issuehistory', label: 'Issue History' },
-    { to: '/issuemap', label: 'Issue Map' }, // <-- Changed from About to Issue Map
+    { to: '/issuemap', label: 'Issue Map' },
     { to: '/contact', label: 'Contact' },
     { to: '/faq', label: 'FAQ' },
   ];
@@ -52,21 +52,18 @@ const Navbar = () => {
       setIsLoggedIn(!!user);
       setUserName(user?.displayName || null);
 
-      // Check for admin status and department
+      // Check for admin status
       if (user?.email) {
         const email = user.email.toLowerCase();
         // Check for admin pattern (admin.department@domain.com)
         const adminMatch = email.match(/^admin\.([a-z]+)@/i);
         if (adminMatch) {
           setIsAdmin(true);
-          setUserDepartment(adminMatch[1]); // Extract department
         } else {
           setIsAdmin(false);
-          setUserDepartment(null);
         }
       } else {
         setIsAdmin(false);
-        setUserDepartment(null);
       }
     });
     return () => unsubscribe();

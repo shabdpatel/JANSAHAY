@@ -1,4 +1,3 @@
-// src/config/departments.ts
 export const departmentConfig = {
     collections: {
         'publicwork': [
@@ -97,9 +96,9 @@ export const departmentConfig = {
             'noiseissues',
             'sustainabilityissues'
         ]
-    },
+    } as Record<string, string[]>,
 
-    getCollectionsForDepartment: (dept: string) => {
+    getCollectionsForDepartment: (dept: string): string[] => {
         const normalizedDept = dept.toLowerCase()
             .replace('works', 'work')
             .replace('ies', 'y')
@@ -108,7 +107,7 @@ export const departmentConfig = {
         return departmentConfig.collections[normalizedDept] || [];
     },
 
-    getDepartmentFromEmail: (email: string) => {
+    getDepartmentFromEmail: (email: string): string | null => {
         const adminMatch = email.toLowerCase().match(/^admin\.([a-z]+)@/i);
         if (!adminMatch) return null;
 
