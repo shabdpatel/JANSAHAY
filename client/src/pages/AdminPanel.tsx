@@ -1,17 +1,17 @@
 // src/pages/AdminPanel.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase';
+// @ts-ignore
 import { Dialog, Transition } from '@headlessui/react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Fragment } from 'react';
 
-import { FaMapMarkerAlt, FaTag, FaUser, FaCalendarAlt, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaTag, FaUser, FaCalendarAlt, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload } from 'react-icons/fa';
 import {
     FiFilter,
     FiRefreshCw,
@@ -21,10 +21,25 @@ import {
     FiClock,
     FiXCircle,
     FiMapPin,
-    FiTag,
-    FiUser,
+    FiTag as FiTag2,
+    FiUser as FiUser2,
     FiPhone
 } from 'react-icons/fi';
+
+// ---- TYPES ----
+type Issue = {
+    id: string;
+    collection: string;
+    issueType: string;
+    status: string;
+    createdAt: Date;
+    images?: string[];
+    description: string;
+    coordinates?: { lat: number; lng: number };
+    location: string;
+    department: string;
+    reporter?: { name?: string; mobile?: string };
+};
 
 // Status badge component
 const StatusBadge = ({ status = 'pending' }: { status?: string }) => {
@@ -62,7 +77,7 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 // Department icon mapping
-const getDepartmentIcon = (dept: string) => {
+const getDepartmentIcon = (dept: string | null) => {
     const icons: Record<string, string> = {
         'Public Works': '🏗️',
         'Sanitation': '🚮',
@@ -75,11 +90,11 @@ const getDepartmentIcon = (dept: string) => {
         'Fire Department': '🚒',
         'Animal Control': '🐾'
     };
-    return icons[dept] || '📋';
+    return (dept && icons[dept]) || '📋';
 };
 
 const AdminPanel = () => {
-    const [issues, setIssues] = useState<any[]>([]);
+    const [issues, setIssues] = useState<Issue[]>([]);
     const [loading, setLoading] = useState(true);
     const [department, setDepartment] = useState<string | null>(null);
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -161,7 +176,7 @@ const AdminPanel = () => {
                                             />
                                             {selectedIssue.images?.length > 1 && (
                                                 <div className="grid grid-cols-4 gap-2 mt-2">
-                                                    {selectedIssue.images.slice(1, 5).map((img, index) => (
+                                                    {selectedIssue.images.slice(1, 5).map((img: string, index: number) => (
                                                         <img
                                                             key={index}
                                                             src={img}
@@ -420,8 +435,6 @@ const AdminPanel = () => {
             return;
         }
 
-
-
         // Extract department from admin email (admin.department@domain.com)
         const email = user.email.toLowerCase();
         const adminMatch = email.match(/^admin\.([a-z]+)@/i);
@@ -442,13 +455,14 @@ const AdminPanel = () => {
 
         setDepartment(userDept);
         fetchAllDepartmentIssues(userDept);
+        // eslint-disable-next-line
     }, []);
 
     const fetchAllDepartmentIssues = async (dept: string) => {
         try {
             setLoading(true);
             const collections = getCollectionsForDepartment(dept);
-            let allIssues: any[] = [];
+            let allIssues: Issue[] = [];
 
             // Query all relevant collections for this department
             for (const collectionName of collections) {
@@ -459,12 +473,12 @@ const AdminPanel = () => {
                 }
 
                 const querySnapshot = await getDocs(q);
-                const issuesData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
+                const issuesData = querySnapshot.docs.map(docItem => ({
+                    id: docItem.id,
                     collection: collectionName,
-                    ...doc.data(),
-                    status: doc.data().status || 'pending', // Ensure status always has a value
-                    createdAt: doc.data().createdAt?.toDate() || new Date()
+                    ...docItem.data(),
+                    status: docItem.data().status || 'pending', // Ensure status always has a value
+                    createdAt: docItem.data().createdAt?.toDate() || new Date()
                 }));
                 allIssues = [...allIssues, ...issuesData];
             }
@@ -615,7 +629,6 @@ const AdminPanel = () => {
                         </p>
                     </div>
                 ) : (
-                    // Update the Issues Grid section in AdminPanel.tsx
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredIssues.map((issue) => (
                             <div
@@ -661,7 +674,7 @@ const AdminPanel = () => {
                                             {issue.location.substring(0, 30)}{issue.location.length > 30 ? '...' : ''}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <FiTag className="text-gray-400" />
+                                            <FiTag2 className="text-gray-400" />
                                             {issue.department}
                                         </span>
                                     </div>
@@ -670,7 +683,7 @@ const AdminPanel = () => {
                                     {issue.reporter && (
                                         <div className="mt-auto pt-3 border-t border-gray-100">
                                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                                                <FiUser className="text-gray-400" />
+                                                <FiUser2 className="text-gray-400" />
                                                 <span>Reported by: {issue.reporter.name}</span>
                                             </div>
                                             {issue.reporter.mobile && (
