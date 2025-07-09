@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { getAuth } from 'firebase/auth';
 import { app } from '../firebase';
