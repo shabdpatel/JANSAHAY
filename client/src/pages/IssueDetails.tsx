@@ -1,15 +1,16 @@
 import { useParams } from 'react-router-dom';
 import { FaMapMarkerAlt, FaTag, FaThumbsUp, FaThumbsDown, FaShareAlt, FaDownload, FaFlag, FaArrowLeft, FaComment, FaUser, FaCalendarAlt } from 'react-icons/fa';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
-
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Fix default marker icon for leaflet
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -41,6 +42,8 @@ interface Issue {
     mobile: string;
   };
   status?: 'Pending' | 'Resolved' | 'In Progress';
+  upvotes?: number;
+  downvotes?: number;
 }
 
 const IssueDetails = () => {
@@ -51,6 +54,8 @@ const IssueDetails = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('details');
   const [allIssues] = useState<Issue[]>([]);
+  const [updates, setUpdates] = useState<any[]>([]);
+  const componentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -74,6 +79,7 @@ const IssueDetails = () => {
         ];
 
         let foundIssue: Issue | null = null;
+        let collectionNameUsed: string | null = null;
 
         for (const collectionName of collections) {
           const docRef = doc(db, collectionName, id || '');
@@ -84,12 +90,47 @@ const IssueDetails = () => {
               id: docSnap.id,
               ...docSnap.data()
             } as Issue;
+            collectionNameUsed = collectionName;
             break;
           }
         }
 
         if (foundIssue) {
           setIssue(foundIssue);
+          // Set up real-time updates using onSnapshot
+          if (collectionNameUsed) {
+            const docRef = doc(db, collectionNameUsed, id || '');
+            onSnapshot(docRef, (snapshot) => {
+              if (snapshot.exists()) {
+                setIssue({
+                  id: snapshot.id,
+                  ...snapshot.data()
+                } as Issue);
+
+                // Update updates state when issue status changes
+                setUpdates(prevUpdates => {
+                  const statusUpdateIndex = prevUpdates.findIndex(update => update.title === 'Status Update');
+                  if (statusUpdateIndex !== -1) {
+                    const newUpdates = [...prevUpdates];
+                    newUpdates[statusUpdateIndex] = {
+                      title: 'Status Update',
+                      time: new Date().toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }),
+                      text: `The issue status has been updated to ${snapshot.data().status}.`,
+                      status: snapshot.data().status?.toLowerCase()
+                    };
+                    return newUpdates;
+                  }
+                  return prevUpdates;
+                });
+              }
+            });
+          }
         } else {
           setError('Issue not found');
         }
@@ -103,6 +144,90 @@ const IssueDetails = () => {
 
     fetchIssue();
   }, [id]);
+
+  useEffect(() => {
+    if (issue) {
+      const initialUpdates = [
+        {
+          title: 'Issue Reported',
+          time: issue.createdAt?.toDate().toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) || 'Date not available',
+          text: `The issue was reported to the ${issue.department} department.`,
+          status: 'reported'
+        },
+        {
+          title: 'Status Update',
+          time: new Date().toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          text: `The issue status has been updated to ${issue.status}.`,
+          status: issue.status?.toLowerCase()
+        }
+      ];
+      setUpdates(initialUpdates);
+    }
+  }, [issue]);
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Issue: ${issue?.issueType}`,
+        text: issue?.description,
+        url: window.location.href,
+      })
+        .then(() => console.log('Successful share'))
+        .catch((error) => console.error('Error sharing:', error));
+    } else {
+      alert('Web Share API is not supported in your browser. Please copy the link manually.');
+    }
+  };
+
+  const handleDownload = async () => {
+    if (componentRef.current) {
+      const canvas = await html2canvas(componentRef.current, {
+        scale: 2, // Increase scale for better resolution
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`issue_${issue?.issueType.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+    }
+  };
+
+  const getProgressPercentage = () => {
+    switch (issue?.status) {
+      case 'Resolved':
+        return 100;
+      case 'In Progress':
+        return 65;
+      default:
+        return 20;
+    }
+  };
+
+  const getStatusColor = (status: string | undefined) => {
+    switch (status) {
+      case 'Resolved':
+        return 'bg-green-500';
+      case 'In Progress':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-blue-500';
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -137,7 +262,7 @@ const IssueDetails = () => {
         onClick={() => navigate('/report-issue')}
         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2"
       >
-        Report New Issue
+        <FaFlag /> Report New Issue
       </button>
     </div>
   );
@@ -151,7 +276,7 @@ const IssueDetails = () => {
   }) || 'Date not available';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6" ref={componentRef}>
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6 transition-colors"
@@ -182,10 +307,10 @@ const IssueDetails = () => {
               </div>
 
               <div className="flex gap-3">
-                <button className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm transition-colors">
+                <button onClick={handleShare} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm transition-colors">
                   <FaShareAlt className="text-blue-600" /> Share
                 </button>
-                <button className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm transition-colors">
+                <button onClick={handleDownload} className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm transition-colors">
                   <FaDownload className="text-gray-600" /> Download
                 </button>
               </div>
@@ -378,40 +503,18 @@ const IssueDetails = () => {
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Issue Updates</h2>
 
                 <div className="space-y-4">
-                  <div className="relative pl-6 pb-6 border-l-2 border-gray-200">
-                    <div className="absolute w-4 h-4 bg-blue-500 rounded-full -left-2 top-0"></div>
-                    <div className="bg-white p-4 rounded-lg shadow-xs">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-medium text-gray-900">Issue Reported</h3>
-                        <span className="text-xs text-gray-500">2 days ago</span>
-                      </div>
-                      <p className="text-gray-700 text-sm">The issue was reported to the {issue.department} department.</p>
-                    </div>
-                  </div>
-
-                  <div className="relative pl-6 pb-6 border-l-2 border-gray-200">
-                    <div className="absolute w-4 h-4 bg-yellow-500 rounded-full -left-2 top-0"></div>
-                    <div className="bg-white p-4 rounded-lg shadow-xs">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-medium text-gray-900">Under Review</h3>
-                        <span className="text-xs text-gray-500">1 day ago</span>
-                      </div>
-                      <p className="text-gray-700 text-sm">The issue is currently being reviewed by the department.</p>
-                    </div>
-                  </div>
-
-                  {issue.status === 'Resolved' && (
-                    <div className="relative pl-6 border-l-2 border-gray-200">
-                      <div className="absolute w-4 h-4 bg-green-500 rounded-full -left-2 top-0"></div>
+                  {updates.map((update, index) => (
+                    <div key={index} className="relative pl-6 pb-6 border-l-2 border-gray-200">
+                      <div className={`absolute w-4 h-4 rounded-full -left-2 top-0 ${getStatusColor(update.status)}`}></div>
                       <div className="bg-white p-4 rounded-lg shadow-xs">
                         <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-medium text-gray-900">Issue Resolved</h3>
-                          <span className="text-xs text-gray-500">Today</span>
+                          <h3 className="font-medium text-gray-900">{update.title}</h3>
+                          <span className="text-xs text-gray-500">{update.time}</span>
                         </div>
-                        <p className="text-gray-700 text-sm">The issue has been successfully resolved.</p>
+                        <p className="text-gray-700 text-sm">{update.text}</p>
                       </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
             )}
@@ -428,13 +531,13 @@ const IssueDetails = () => {
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-medium text-gray-700">Progress</span>
                   <span className="text-sm font-medium">
-                    {issue.status === 'Resolved' ? '100%' : issue.status === 'In Progress' ? '65%' : '20%'}
+                    {getProgressPercentage()}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div
-                    className={`h-2.5 rounded-full ${issue.status === 'Resolved' ? 'bg-green-500' : issue.status === 'In Progress' ? 'bg-yellow-500' : 'bg-blue-500'}`}
-                    style={{ width: issue.status === 'Resolved' ? '100%' : issue.status === 'In Progress' ? '65%' : '20%' }}
+                    className={`h-2.5 rounded-full ${getStatusColor(issue?.status)}`}
+                    style={{ width: `${getProgressPercentage()}%` }}
                   ></div>
                 </div>
               </div>
@@ -461,7 +564,7 @@ const IssueDetails = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Upvotes</p>
-                  <p className="font-semibold text-gray-900">125</p>
+                  <p className="font-semibold text-gray-900">{issue.upvotes || 0}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -470,11 +573,10 @@ const IssueDetails = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Downvotes</p>
-                  <p className="font-semibold text-gray-900">12</p>
+                  <p className="font-semibold text-gray-900">{issue.downvotes || 0}</p>
                 </div>
               </div>
             </div>
-
             <div className="h-40">
               <div className="flex items-end justify-between h-full px-2">
                 {[
