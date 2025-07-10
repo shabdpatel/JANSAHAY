@@ -1,0 +1,170 @@
+[
+  {
+    "department": "Animal Control",
+    "issue_count": 1,
+    "top_issues": {
+      "animal menace": 1
+    },
+    "center_lat": 24.766784522874453,
+    "center_lng": 78.85986328125001,
+    "suggestions": [
+      "Run animal control and vaccination drives."
+    ],
+    "issues": [
+      {
+        "createdAt": "2025-07-04 04:59:43.961",
+        "issueType": "animal menace",
+        "description": "A cow has been sitting in the middle of the road for several hours, blocking traffic and causing inconvenience. Kindly send the animal control team to relocate the animal safely",
+        "lat": 24.766784522874453,
+        "lng": 78.85986328125001,
+        "location": "Nargora, Narguda khas, Madhya Pradesh, 472001, India",
+        "issue_age_days": 6
+      }
+    ]
+  },
+  {
+    "department": "Other",
+    "issue_count": 1,
+    "top_issues": {
+      "other": 1
+    },
+    "center_lat": 22.958393318086348,
+    "center_lng": 73.87207031250001,
+    "suggestions": [
+      "Investigate and act on unauthorized construction complaints."
+    ],
+    "issues": [
+      {
+        "createdAt": "2025-07-04 04:57:13.759",
+        "issueType": "other",
+        "description": "Unauthorized construction work is being carried out on the footpath, blocking pedestrian movement and violating municipal regulations. Please inspect and take necessary action.",
+        "lat": 22.958393318086348,
+        "lng": 73.87207031250001,
+        "location": "Gujarat, 389110, India",
+        "issue_age_days": 6
+      }
+    ]
+  },
+  {
+    "department": "Public Works",
+    "issue_count": 3,
+    "top_issues": {
+      "broken bench": 2,
+      "pothole": 1
+    },
+    "center_lat": 25.921940648670713,
+    "center_lng": 82.12791413068773,
+    "suggestions": [
+      "Prioritize road maintenance in high-traffic areas.",
+      "Replace or repair broken benches in parks and bus stops."
+    ],
+    "issues": [
+      {
+        "createdAt": "2025-07-09 06:49:12.745",
+        "issueType": "broken bench",
+        "description": "A wooden bench in the central city park near the fountain is broken and unsafe for sitting. Several seniors and morning walkers use it regularly and have raised safety concerns.",
+        "lat": 25.15713279639122,
+        "lng": 75.85341811180116,
+        "location": "Dinesh Park, Kota, Rajasthan, 324005, India",
+        "issue_age_days": 1
+      },
+      {
+        "createdAt": "2025-07-04 04:53:29.584",
+        "issueType": "broken bench",
+        "description": "One of the benches in the children\\'s park is broken and has sharp edges exposed. This poses a danger to kids playing in the park. Requesting urgent repair or replacement of the bench to ensure the safety of park visitors.",
+        "lat": 27.029770731463564,
+        "lng": 78.65112304687501,
+        "location": "Shikohabad, Uttar Pradesh, 205135, India",
+        "issue_age_days": 6
+      },
+      {
+        "createdAt": "2025-07-07 18:31:45.528",
+        "issueType": "pothole",
+        "description": "The streetlight near the park has not been functioning for several nights, making the area very dark and unsafe for pedestrians. Residents are concerned about the increased risk of theft and accidents. Kindly arrange for the repair of the streetlight as soon as possible.",
+        "lat": 25.578918418157357,
+        "lng": 91.879201233387,
+        "location": "Mawkhar, Shillong, Meghalaya, 793001, India",
+        "issue_age_days": 2
+      }
+    ]
+  },
+  {
+    "department": "Roads & Transport",
+    "issue_count": 3,
+    "top_issues": {
+      "illegal parking": 1,
+      "manhole open": 1,
+      "tree fallen": 1
+    },
+    "center_lat": 21.45155489802921,
+    "center_lng": 77.78779611848705,
+    "suggestions": [
+      "Ensure all open manholes are covered securely.",
+      "Conduct tree maintenance drives to remove hazards.",
+      "Enforce strict no-parking zones and regulate unauthorized parking."
+    ],
+    "issues": [
+      {
+        "createdAt": "2025-07-05 08:22:23.618",
+        "issueType": "illegal parking",
+        "description": "Several cars are parked illegally on the footpath, making it difficult for pedestrians to walk. This is especially problematic for elderly people and children. Kindly take action against illegal parking and clear the footpath.",
+        "lat": 11.935568250456445,
+        "lng": 79.82147544622423,
+        "location": "Grand Bazaar, Puducherry, Puducherry, 605001, India",
+        "issue_age_days": 5
+      },
+      {
+        "createdAt": "2025-07-05 07:48:08.057",
+        "issueType": "manhole open",
+        "description": "There is an open manhole near the school entrance, which is extremely dangerous for children and other pedestrians. Please cover the manhole immediately to prevent any accidents.",
+        "lat": 31.7074607,
+        "lng": 76.5263285,
+        "location": "NH3, Anu, Hamirpur, Himachal Pradesh, 177005, India",
+        "issue_age_days": 5
+      },
+      {
+        "createdAt": "2025-07-06 15:06:25.910",
+        "issueType": "tree fallen",
+        "description": "A large tree has fallen across the road after last night\\'s storm, completely blocking traffic. Emergency services are needed to remove the tree and restore normal movement for vehicles and pedestrians.",
+        "lat": 20.7116357436312,
+        "lng": 77.01558440923692,
+        "location": "Umerkhed, Akola, Maharashtra, 444001, India",
+        "issue_age_days": 3
+      }
+    ]
+  },
+  {
+    "department": "Water Supply",
+    "issue_count": 2,
+    "top_issues": {
+      "blocked drain": 1,
+      "water leak": 1
+    },
+    "center_lat": 23.572660040237558,
+    "center_lng": 85.8807492359275,
+    "suggestions": [
+      "Fix leaking pipelines and monitor water supply.",
+      "Regularly clean clogged drains and improve drainage mapping."
+    ],
+    "issues": [
+      {
+        "createdAt": "2025-07-05 10:11:53.063",
+        "issueType": "blocked drain",
+        "description": "There is a blocked drainage in the east part of the sky mart in Jawahar Moti Lal Nehru road in front of forest department it is causing a very dirty and awful smell in the area and have reported multiple times in the department ",
+        "lat": 22.166920080475112,
+        "lng": 88.259098471855,
+        "location": "Dakshin Bishnupur, West Bengal, 743332, India",
+        "issue_age_days": 5
+      },
+      {
+        "createdAt": "2025-07-04 04:50:03.938",
+        "issueType": "water leak",
+        "description": "There is a continuous water leakage from the main supply pipe near our building. The leaking water is flooding the street and causing inconvenience to residents and commuters. Please send a team to fix the leakage and prevent water wastage.",
+        "lat": 24.9784,
+        "lng": 83.5024,
+        "location": "Bhabua, Bihar, 821101, India",
+        "issue_age_days": 6
+      }
+    ]
+  }
+]
