@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -120,14 +120,18 @@ const Aiplanner = () => {
     const mapRef = useRef(null);
 
     useEffect(() => {
-        // Process and validate the data
-        const processedData = suggestionsData.map(suggestion => ({
-            ...suggestion,
+        // Process and validate the data with proper typing
+        const processedData: Suggestion[] = suggestionsData.map((suggestion: any) => ({
             department: suggestion.department as Department,
-            issues: suggestion.issues.filter(issue =>
+            issues: suggestion.issues.filter((issue: any) =>
                 isValidIndiaLocation(issue.lat, issue.lng)
-            )
-        })).filter(suggestion => suggestion.issues.length > 0);
+            ),
+            issue_count: suggestion.issue_count,
+            top_issues: suggestion.top_issues,
+            center_lat: suggestion.center_lat,
+            center_lng: suggestion.center_lng,
+            suggestions: suggestion.suggestions
+        })).filter((suggestion: Suggestion) => suggestion.issues.length > 0);
 
         setSuggestions(processedData);
     }, []);
