@@ -7,8 +7,21 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 // @ts-ignore
 import suggestionsData from '../../../data_analysis/scripts/department_suggestions.json';
 
-// Department configurations
-const departmentConfig = {
+// Define department types
+type Department =
+    | "Animal Control"
+    | "Public Works"
+    | "Roads & Transport"
+    | "Water Supply"
+    | "Other";
+
+// Department configurations with explicit type
+interface DepartmentConfig {
+    icon: string;
+    color: string;
+}
+
+const departmentConfig: Record<Department, DepartmentConfig> = {
     "Animal Control": { icon: "🐾", color: "#f59e42" },
     "Public Works": { icon: "🏗️", color: "#60a5fa" },
     "Roads & Transport": { icon: "🚦", color: "#f87171" },
@@ -27,7 +40,7 @@ type Issue = {
 };
 
 type Suggestion = {
-    department: string;
+    department: Department;
     issue_count: number;
     top_issues: Record<string, number>;
     center_lat: number;
@@ -55,13 +68,14 @@ const isValidIndiaLocation = (lat: number, lng: number) => {
 };
 
 // Custom icon creator
-const createCustomIcon = (department: string) => {
+const createCustomIcon = (department: Department) => {
+    const config = departmentConfig[department] || departmentConfig["Other"];
     return L.divIcon({
-        html: `<div style="background-color: ${departmentConfig[department]?.color || '#a78bfa'}; 
+        html: `<div style="background-color: ${config.color}; 
            width: 32px; height: 32px; display: flex; align-items: center; 
            justify-content: center; border-radius: 50%; color: white; font-size: 16px;
            border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
-           ${departmentConfig[department]?.icon || '📋'}
+           ${config.icon}
          </div>`,
         className: '',
         iconSize: [32, 32],
@@ -96,17 +110,20 @@ const FitBoundsToMarkers = ({ suggestions }: { suggestions: Suggestion[] }) => {
 
 const Aiplanner = () => {
     const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-    const [activeDepartments, setActiveDepartments] = useState<Record<string, boolean>>(
-        Object.keys(departmentConfig).reduce((acc, dept) => ({ ...acc, [dept]: true }), {})
+    const [activeDepartments, setActiveDepartments] = useState<Record<Department, boolean>>(
+        Object.keys(departmentConfig).reduce((acc, dept) => ({
+            ...acc,
+            [dept as Department]: true
+        }), {} as Record<Department, boolean>)
     );
     const [sortBy, setSortBy] = useState<'recent' | 'count'>('recent');
     const mapRef = useRef(null);
-
 
     useEffect(() => {
         // Process and validate the data
         const processedData = suggestionsData.map(suggestion => ({
             ...suggestion,
+            department: suggestion.department as Department,
             issues: suggestion.issues.filter(issue =>
                 isValidIndiaLocation(issue.lat, issue.lng)
             )
@@ -156,7 +173,7 @@ const Aiplanner = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                            {Object.keys(departmentConfig).map(dept => (
+                            {(Object.keys(departmentConfig) as Department[]).map(dept => (
                                 <button
                                     key={dept}
                                     onClick={() => setActiveDepartments(prev => ({
@@ -182,7 +199,7 @@ const Aiplanner = () => {
                 </div>
 
                 {/* Map Section */}
-                <div className="w-full h-[60vh] rounded-xl overflow-hidden mb-8 relative z-0 shadow-lg border border-gray-200">
+                <div className="w-full h-[60vh] rounded-xl overflow-hidden mb-8 shadow-lg border border-gray-200">
                     <MapContainer
                         center={defaultCenter}
                         zoom={5}
