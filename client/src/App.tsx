@@ -15,6 +15,7 @@ import FAQ from './pages/Faq';
 import Issuehistory from './pages/Issuehistory';
 import AdminPanel from './pages/AdminPanel';
 import ProtectedRoute from './components/ProtectedRoute';
+import Aiplanner from './pages/Aiplanner';
 
 // Scroll restoration component
 const ScrollToTopOnRouteChange = () => {
@@ -45,6 +46,12 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/issuehistory" element={<Issuehistory />} />
+            <Route path="/aiplanner" element=
+              {
+                <ProtectedRoute>
+                  <Aiplanner />
+                </ProtectedRoute>
+              } />
             <Route path="/admin" element={
               <ProtectedRoute>
                 <AdminPanel />

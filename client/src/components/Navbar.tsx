@@ -26,9 +26,11 @@ const Navbar = () => {
 
   const allNavLinks = [
     ...navLinks,
-    ...(isAdmin ? [{ to: '/admin', label: 'Admin Panel' }] : [])
+    ...(isAdmin ? [
+      { to: '/admin', label: 'Admin Panel' },
+      { to: '/aiplanner', label: 'AI Planner' }
+    ] : [])
   ];
-
   const isActive = (path: string) => location.pathname === path;
 
   const handleMobileLinkClick = () => setIsOpen(false);
