@@ -203,11 +203,11 @@ const Aiplanner = () => {
                 </div>
 
                 {/* Map Section */}
-                <div className="w-full h-[60vh] rounded-xl overflow-hidden mb-8 shadow-lg border border-gray-200">
+                <div className="w-full h-[60vh] rounded-xl overflow-hidden mb-8 shadow-lg border border-gray-200 relative z-0">
                     <MapContainer
                         center={defaultCenter}
                         zoom={5}
-                        style={{ height: "100%", width: "100%" }}
+                        style={{ height: "100%", width: "100%", position: "relative", zIndex: 0 }}
                         scrollWheelZoom={true}
                         ref={mapRef}
                     >
