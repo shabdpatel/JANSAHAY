@@ -28,7 +28,7 @@ const Contact = () => {
                                 </div>
                                 <div className="ml-3">
                                     <h3 className="text-sm font-medium text-gray-900">Address</h3>
-                                    <p className="text-sm text-gray-500">123 Civic Lane, Bhabua, Kaimur, Bihar 821101</p>
+                                    <p className="text-sm text-gray-500">Bhabua, Kaimur, Bihar 821101</p>
                                 </div>
                             </div>
 
@@ -38,7 +38,7 @@ const Contact = () => {
                                 </div>
                                 <div className="ml-3">
                                     <h3 className="text-sm font-medium text-gray-900">Phone</h3>
-                                    <p className="text-sm text-gray-500">+91 8580652463</p>
+                                    <p className="text-sm text-gray-500">+91 8757489128</p>
                                     <p className="text-xs text-gray-400 mt-1">Monday-Friday, 9am-5pm</p>
                                 </div>
                             </div>
@@ -49,7 +49,7 @@ const Contact = () => {
                                 </div>
                                 <div className="ml-3">
                                     <h3 className="text-sm font-medium text-gray-900">Email</h3>
-                                    <p className="text-sm text-gray-500">support@jansahay.com</p>
+                                    <p className="text-sm text-gray-500">shabdpatel87@gmail.com</p>
                                     <p className="text-xs text-gray-400 mt-1">Typically respond within 24 hours</p>
                                 </div>
                             </div>
@@ -73,7 +73,7 @@ const Contact = () => {
                                 <a href="#" className="text-gray-400 hover:text-blue-600">
                                     <FaTwitter className="h-5 w-5" />
                                 </a>
-                                <a href="#" className="text-gray-400 hover:text-blue-600">
+                                <a href="https://www.linkedin.com/company/jansahay/?viewAsMember=true" className="text-gray-400 hover:text-blue-600">
                                     <FaLinkedin className="h-5 w-5" />
                                 </a>
                                 <a href="#" className="text-gray-400 hover:text-blue-600">

@@ -80,13 +80,13 @@ const Footer = () => (
         <h4 className="font-semibold text-gray-800 mb-3">Contact Us</h4>
         <ul className="text-sm text-gray-600 space-y-2">
           <li className="flex items-center gap-2">
-            <FaMapMarkerAlt className="text-blue-600" /> 123 Civic Lane, Bhabua, Kaimur, Bihar 821101
+            <FaMapMarkerAlt className="text-blue-600" /> Bhabua, Kaimur, Bihar 821101
           </li>
           <li className="flex items-center gap-2">
-            <FaEnvelope className="text-blue-600" /> support@jansahay.com
+            <FaEnvelope className="text-blue-600" /> shabdpatel87@gmail.com
           </li>
           <li className="flex items-center gap-2">
-            <FaPhone className="text-blue-600" /> +91 98765 43210
+            <FaPhone className="text-blue-600" /> +91 8757489128
           </li>
         </ul>
       </div>
