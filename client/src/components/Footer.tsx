@@ -46,7 +46,7 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-10">
       {/* About */}
       <div>
-        <span className="font-bold text-blue-700 text-xl">JANSAHAY</span>
+        <span className="font-bold text-blue-700 text-xl">CivicAtlas</span>
         <p className="text-sm text-gray-600 mt-3">
           Empowering citizens to report, track, and resolve local issues, making neighborhoods safer and cleaner. Join us in building a better community!
         </p>

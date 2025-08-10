@@ -61,7 +61,7 @@ const LoginPage = () => {
                     <div className="mb-6 flex justify-center md:justify-start">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png" alt="Logo" className="w-10 h-10" />
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 leading-tight text-center md:text-left">Welcome to JANSAHAY</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 leading-tight text-center md:text-left">Welcome to CivicAtlas</h1>
                     <p className="text-gray-600 text-xs sm:text-sm mb-6 text-center md:text-left">
                         Your direct link to a better community. Report civic issues and track progress with ease.
                     </p>

@@ -78,7 +78,7 @@ const Navbar = () => {
           {/* Logo and Main Links */}
           <div className="flex items-center space-x-8">
             <Link to="/" className="flex items-center" aria-label="Home">
-              <span className="text-xl font-bold text-blue-700">JANSAHAY</span>
+              <span className="text-xl font-bold text-blue-700">CivicAtlas</span>
             </Link>
             {/* Desktop Main Menu */}
             <div className="hidden md:flex items-center space-x-8">

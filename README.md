@@ -1,4 +1,4 @@
-# 🏙️ JANSAHAY – Smart City Issue Reporter & Analyzer
+# 🏙️ CivicAtlas – Smart City Issue Reporter & Analyzer
 
 [![Status](https://img.shields.io/badge/Status-Under_Construction-orange?style=for-the-badge)]()
 [![MIT License](https://img.shields.io/badge/license-MIT-green?style=for-the-badge)]()
